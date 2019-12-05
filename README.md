@@ -1,4 +1,4 @@
-# Brig-iOS
+# BrigðiOS
 Very simple small changable and configurable from PC pseudo operation system for control PCB with little microcontroller. 
 
 This pseudo OS at present contains two modules - crontab and uart.
