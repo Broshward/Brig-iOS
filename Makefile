@@ -35,7 +35,7 @@ LFLAGS  = -nostartfiles -Wl,-Tlinker.ld -L$(LIBDIR) -L$(STDLIBDIR)
 LFLAGS += -fno-exceptions -Wl,-X,--gc-sections,--no-whole-archive
 LFLAGS_LIBS = #-fno-exceptions -ffunction-sections -fdata-sections -Wl,-X,--gc-sections
 
-all: clean compile disasm size #info
+all: clean compile disasm size tags #info
 
 #-----------------------------------------------------------------------------------------------------
 clean:
@@ -62,6 +62,15 @@ info:
 size:
 	@echo 'SIZE:'
 	$(SIZE) -d $(PROGRAM).elf	
+
+clean_tags:
+	rm tags
+	
+tags: clean_tags
+	arm-linux-gnueabihf-gcc -M $(FILES) | sed -e 's/[\\ ]/\n/g' | \
+		sed -e '/^$$/d' -e '/\.o:[ \t]*$$/d' | \
+		ctags -L - --c++-kinds=+p --fields=+iaS --extras=+q
+
 #-----------------------------------------------------------------------------------------------------
 libs: clean_libs
 	@echo -n ".Building libs"
