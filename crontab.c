@@ -14,7 +14,7 @@ int32_t localtime = 3*3600;
 
 void cron_action(uint8_t number)
 {
-add_to_transmit_str((uint8_t*)"ACT:");
+add_to_transmit_str("ACT:");
 add_to_transmit(number);
 add_END_to_transmit();
 	char *str = strblank(crontab[number],6)+1;
@@ -45,7 +45,7 @@ add_END_to_transmit();
 
 //void alarm_action(uint8_t number) //deprecated
 //{
-////add_to_transmit_str((uint8_t*)"ACT:");
+////add_to_transmit_str("ACT:");
 ////add_to_transmit(number);
 ////add_END_to_transmit();
 ////	uint32_t *dest = crontab[number]->dest_addr; 
@@ -82,7 +82,7 @@ uint32_t next_alarm()
 		if (crontab[i])
 			temp = next_time(crontab[i]);
 		else {
-//add_to_transmit_str((uint8_t*)"NEXT:");
+//add_to_transmit_str("NEXT:");
 //add_to_transmit_uint32(next_alrm);
 //add_END_to_transmit();
 			return next_alrm; 
@@ -101,7 +101,7 @@ uint8_t max_field(TIME *tm, uint8_t field);
 uint32_t next_time(char *str)
 {
 	uint32_t curr_time = (RTC->CNTH<<16)+RTC->CNTL;
-//add_to_transmit_str((uint8_t*)"TM:");
+//add_to_transmit_str("TM:");
 //add_to_transmit_uint32(curr_time);
 //add_END_to_transmit();
 	TIME tm;

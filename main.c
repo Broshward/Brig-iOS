@@ -1,28 +1,14 @@
 #include "math.h"
 #include "main.h"
+#include "uart.h"
+#include "crontab.h"
 //#include "syscalls.h"
 //#include "stdlib.h"
 //#include <string.h>
 
 uint32_t clock_frequency_measure();
 
-const uint32_t sys_time = 1533128400;
-uint32_t alarm;
-uint8_t transmit_buf[256];
-uint8_t transmit_queue_index=0;
-uint8_t receive_buf[256];
-
-//----- Byte staffing protocol------------------
-#define END 0
-#define END_change 0xFD
-#define END_change_change 0xFC
-void add_END_to_transmit();
-void add_to_transmit(uint8_t num);
-void add_to_transmit_uint16(uint16_t num);
-void add_to_transmit_uint32(uint32_t num);
-void add_to_transmit_str(uint8_t *str);
-
-void cmd_perform(char *str);
+const uint32_t sys_time = 1533128400; // Birthtime of BrigðiOS. Historical remains :-))
 
 uint32_t recent_time, recent_alarm;
 
@@ -60,85 +46,72 @@ int main()
 //	cron_add_tab("4-60/6 * * * * * 40013804 V39\0");
 //	cron_add_tab("5-60/6 * * * * * 40013804 V40\0");
 //	cron_add_tab("* * * * * * 40013804 4000281c\0");
+
 //	Tables for greenhouse: 
-	//cron_add_tab("0 0 5,7-19,21 * * * 40011010 V100\0");
-	crontab[0] = "0 0 5,7-19,21 * * * D40011010 V100";
-	crontab[1] = "0 1 5,7-19,21 * * * D40011014 V100";
-	crontab[2] = "0 30 10-16 * * * D40011010 V100";
-	crontab[3] = "0 31 10-16 * * * D40011014 V100";
-	crontab[4] = "1 1 5,7-19,21 * * * D40011010 V200";
-	crontab[5] = "1 2 5,7-19,21 * * * D40011014 V200";
-	crontab[6] = "1 31 10-16 * * * D40011010 V200";
-	crontab[7] = "1 32 10-16 * * * D40011014 V200";
+	SETMASK(GPIOB->CRL, GPIO_CRL_CNF2|GPIO_CRL_MODE2, 0b0001);
+	SETMASK(GPIOB->CRL, GPIO_CRL_CNF3|GPIO_CRL_MODE3, 0b0001); 
+	crontab[0] = "0 0 5,7-19,21 * * * D40010C10 V4";
+	crontab[1] = "0 1 5,7-19,21 * * * D40010C14 V4";
+	crontab[2] = "0 30 10-16 * * * D40010C10 V4";
+	crontab[3] = "0 31 10-16 * * * D40010C14 V4";
+	crontab[4] = "1 1 5,7-19,21 * * * D40010C10 V10";
+	crontab[5] = "1 2 5,7-19,21 * * * D40010C14 V10";
+	crontab[6] = "1 31 10-16 * * * D40010C10 V10";
+	crontab[7] = "1 32 10-16 * * * D40010C14 V10";
 	crontab[8] = "*/15 * * * * * D40003000 VAAAA";
 //	crontab[9] = "0 * * * * * D40011014 V200";
 //	crontab[10] = "0 * * * * * D40011014 V200";
 //	crontab[11] = "0 * * * * * D40011014 V200";
 
-	RCC->CSR |= RCC_CSR_LSION;
-	while(!(RCC->CSR & RCC_CSR_LSIRDY));
-	IWDG->KR = 0xCCCC;
-	IWDG->KR = 0x5555;
-	IWDG->PR = 0b111;
-	//DBGMCU->CR |= DBGMCU_IWDG_STOP;
+//	RCC->CSR |= RCC_CSR_LSION;
+//	while(!(RCC->CSR & RCC_CSR_LSIRDY));
+//	IWDG->KR = 0xCCCC;
+//	IWDG->KR = 0x5555;
+//	IWDG->PR = 0b111;
+//	//DBGMCU->CR |= DBGMCU_IWDG_STOP;
 
 	RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
-	SETMASK(GPIOC->CRH, GPIO_CRH_CNF8|GPIO_CRH_MODE8, 0b0001); 
-	SETMASK(GPIOC->CRH, GPIO_CRH_CNF9|GPIO_CRH_MODE9, 0b0001); 
-	RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
-	SETMASK(GPIOB->CRL, GPIO_CRL_CNF0|GPIO_CRL_MODE0, 0b0001); 
-	SETMASK(GPIOB->CRL, GPIO_CRL_CNF1|GPIO_CRL_MODE1, 0b0001); 
-//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF2|GPIO_CRL_MODE2, 0b0001); 
-//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF3|GPIO_CRL_MODE3, 0b0001); 
-//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF4|GPIO_CRL_MODE4, 0b0001); 
-	SETMASK(GPIOB->CRL, GPIO_CRL_CNF5 |GPIO_CRL_MODE5 , 0b0001); 
-	SETMASK(GPIOB->CRL, GPIO_CRL_CNF6 |GPIO_CRL_MODE6 , 0b0001); 
-	SETMASK(GPIOB->CRL, GPIO_CRL_CNF7 |GPIO_CRL_MODE7 , 0b0001); 
-	SETMASK(GPIOB->CRH, GPIO_CRH_CNF8 |GPIO_CRH_MODE8 , 0b0001); 
-	SETMASK(GPIOB->CRH, GPIO_CRH_CNF9 |GPIO_CRH_MODE9 , 0b0001); 
-	SETMASK(GPIOB->CRH, GPIO_CRH_CNF10|GPIO_CRH_MODE10, 0b0001); 
-	SETMASK(GPIOB->CRH, GPIO_CRH_CNF11|GPIO_CRH_MODE11, 0b0001); 
-	SETMASK(GPIOB->CRH, GPIO_CRH_CNF12|GPIO_CRH_MODE12, 0b0001); 
-	SETMASK(GPIOB->CRH, GPIO_CRH_CNF13|GPIO_CRH_MODE13, 0b0001); 
-	SETMASK(GPIOB->CRH, GPIO_CRH_CNF15|GPIO_CRH_MODE15, 0b0001); 
-	SETMASK(GPIOB->CRH, GPIO_CRH_CNF15|GPIO_CRH_MODE15, 0b0001); 
-	GPIOB->BSRR = 0b1;
-	GPIOB->BRR = 0b1111100010;
-	if (GPIOC->ODR & (1<<9))
-		sbi(GPIOB->BSRR,13);
-	if (GPIOC->ODR & (1<<8))
-		sbi(GPIOB->BSRR,12);
-	if (RCC->CSR & (RCC_CSR_PINRSTF))
-		sbi(GPIOB->BSRR,1);
-	if (RCC->CSR & (RCC_CSR_PORRSTF))
-		sbi(GPIOB->BSRR,5);
-	if (RCC->CSR & (RCC_CSR_SFTRSTF))
-		sbi(GPIOB->BSRR,6);
-	if (RCC->CSR & (RCC_CSR_IWDGRSTF))
-		sbi(GPIOB->BSRR,7);
-	if (RCC->CSR & (RCC_CSR_WWDGRSTF))
-		sbi(GPIOB->BSRR,8);
-	if (RCC->CSR & (RCC_CSR_LPWRRSTF))
-		sbi(GPIOB->BSRR,9);
+//	SETMASK(GPIOC->CRH, GPIO_CRH_CNF8|GPIO_CRH_MODE8, 0b0001); 
+//	SETMASK(GPIOC->CRH, GPIO_CRH_CNF9|GPIO_CRH_MODE9, 0b0001); 
+//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF0|GPIO_CRL_MODE0, 0b0001); 
+//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF1|GPIO_CRL_MODE1, 0b0001); 
+////	SETMASK(GPIOB->CRL, GPIO_CRL_CNF4|GPIO_CRL_MODE4, 0b0001); 
+//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF5 |GPIO_CRL_MODE5 , 0b0001); 
+////	SETMASK(GPIOB->CRL, GPIO_CRL_CNF6 |GPIO_CRL_MODE6 , 0b0001); 
+////	SETMASK(GPIOB->CRL, GPIO_CRL_CNF7 |GPIO_CRL_MODE7 , 0b0001); 
+//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF8 |GPIO_CRH_MODE8 , 0b0001); 
+//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF9 |GPIO_CRH_MODE9 , 0b0001); 
+//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF10|GPIO_CRH_MODE10, 0b0001); 
+//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF11|GPIO_CRH_MODE11, 0b0001); 
+//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF12|GPIO_CRH_MODE12, 0b0001); 
+//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF13|GPIO_CRH_MODE13, 0b0001); 
+//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF15|GPIO_CRH_MODE15, 0b0001); 
+//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF15|GPIO_CRH_MODE15, 0b0001); 
+//	GPIOB->BSRR = 0b1;
+//	GPIOB->BRR = 0b1111100010;
+//	if (GPIOC->ODR & (1<<9))
+//		sbi(GPIOB->BSRR,13);
+//	if (GPIOC->ODR & (1<<8))
+//		sbi(GPIOB->BSRR,12);
+//	if (RCC->CSR & (RCC_CSR_PINRSTF))
+//		sbi(GPIOB->BSRR,1);
+//	if (RCC->CSR & (RCC_CSR_PORRSTF))
+//		sbi(GPIOB->BSRR,5);
+//	if (RCC->CSR & (RCC_CSR_SFTRSTF))
+//		sbi(GPIOB->BSRR,6);
+//	if (RCC->CSR & (RCC_CSR_IWDGRSTF))
+//		sbi(GPIOB->BSRR,7);
+//	if (RCC->CSR & (RCC_CSR_WWDGRSTF))
+//		sbi(GPIOB->BSRR,8);
+//	if (RCC->CSR & (RCC_CSR_LPWRRSTF))
+//		sbi(GPIOB->BSRR,9);
 	
 sys_clock=clock_frequency_measure();
-//---------UART-----------------------
-    RCC->APB2ENR |= RCC_APB2Periph_USART1;//Включение тактовой USART (на APB1 шине висит)
-#define baudrate 115200
-	uint16_t ratio = sys_clock/baudrate;
-	if (ratio<16) {
-		USART1->CR1 |= USART_CR1_OVER8;
-		USART1->BRR = ((ratio<<1) & (~0b1111)) | (ratio & 0b111); // (ratio/8<<4) | (ratio%8)
-	}
-	else {
-		USART1->CR1 &= ~USART_CR1_OVER8;
-		USART1->BRR = ratio;
-	}
-	USART1->CR1 |= USART_CR1_UE	| USART_CR1_TE | USART_CR1_RE;
-	RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
-	SETMASK(GPIOA->CRH, GPIO_CRH_CNF10|GPIO_CRH_MODE10, 0b0100); 
-	SETMASK(GPIOA->CRH, GPIO_CRH_CNF9|GPIO_CRH_MODE9, 0b1010); 
-	//INTERRUPT_ENABLE(37);
+
+RCC->APB2ENR |= RCC_APB2Periph_USART1;//Включение тактовой USART (на APB1 шине висит)
+RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
+RCC->APB2ENR |= RCC_APB2Periph_AFIO;
+UART_initialization(9600);
 
 //-----------DMA1---------------------------
 	//---- DMA for transmit buffer-----------------
@@ -158,27 +131,10 @@ sys_clock=clock_frequency_measure();
 
 	set_alarm(next_alarm());
 
-	uint8_t transmited=0;
-	uint8_t received=0;
 	while(1){
-		if (transmit_queue_index!=transmited)
-			if (USART1->SR & USART_SR_TC){
-				USART1->DR = transmit_buf[transmited];
-				transmited++;
-			}
-		if (USART1->SR & USART_SR_RXNE){
-			receive_buf[received] = USART1->DR;
-			if (receive_buf[received] == END){
-				cmd_perform((char *)receive_buf);
-				received = 0;
-			}
-			else if ((receive_buf[received] == END_change) && (receive_buf[received-1] == END_change))
-				receive_buf[received-1] = END;
-			else if ((receive_buf[received] == END_change_change) && (receive_buf[received-1] == END_change))
-				receive_buf[received-1] = END_change;
-			else received++;
-		}
-		if (RTC->CNTH!=0){
+		transmit_uart_buffer();
+		recieve_uart_buffer();
+		if (RTC->CNTH!=0){				// pseudo protection from unexpected zeroing RTC. (RTC->CNT == 0)
 			if (RTC->CNTL!=(uint16_t)recent_time){
 				recent_time = RTC->CNTL + (RTC->CNTH<<16);
 				recent_alarm= RTC->ALRL + (RTC->ALRH<<16);
@@ -245,71 +201,6 @@ sys_clock=clock_frequency_measure();
 
 */}
 
-void cmd_perform(char *str)
-{
-	if (!_strncmp(str,"RT",sizeof("ST")-1)){ //Read time(system) UTC
-		add_to_transmit_str((uint8_t*)"TM:");
-		add_to_transmit_uint16(RTC->CNTH);
-		add_to_transmit_uint16(RTC->CNTL);
-		add_END_to_transmit();
-	}
-	if (!_strncmp(str,"ST",sizeof("ST")-1)){ //Set time(system) UTC
-		const uint8_t base = sizeof("ST")-1;
-		while(!(RTC->CRL & RTC_CRL_RTOFF)); // wait for write are terminated
-		RTC->CRL |= RTC_CRL_CNF;     // unblock write access for PRL, CNT, DIV  register of RTC
-		RTC->CNTH = ((uint8_t)str[base]<<8) + (uint8_t)str[base+1];
-		RTC->CNTL = ((uint8_t)str[base+2]<<8)+(uint8_t)str[base+3];
-		RTC->CRL &= ~RTC_CRL_CNF;//  for write protect PRL, CNT, DIV
-		add_to_transmit_str((uint8_t*)"OK");
-		add_END_to_transmit();
-		while(!(RTC->CRL & RTC_CRL_RTOFF)); // wait for write are terminated
-		set_alarm(next_alarm());
-		RCC->CSR |= 1<<24; //Clear all reset flags
-		GPIOB->BRR=0xFFFF;
-	}
-}
-
-void add_END_to_transmit()
-{
-	transmit_buf[transmit_queue_index++]=END;
-}
-
-void add_to_transmit(uint8_t num)
-{
-	switch (num) {
-		case END:
-			transmit_buf[transmit_queue_index++]=END_change;
-			transmit_buf[transmit_queue_index++]=END_change;
-			break;
-		case END_change:
-			transmit_buf[transmit_queue_index++]=END_change;
-			transmit_buf[transmit_queue_index++]=END_change_change;
-			break;
-		default:
-			transmit_buf[transmit_queue_index++]=num;
-			break;
-	}
-}
-
-void add_to_transmit_uint16(uint16_t num)
-{
-	add_to_transmit(num>>8);
-	add_to_transmit((uint8_t)num);
-}
-
-void add_to_transmit_uint32(uint32_t num)
-{
-	for(uint8_t i=3;i<4;i--)
-		add_to_transmit((uint8_t)(num>>(8*i)));
-}
-
-void add_to_transmit_str(uint8_t *str)
-{
-	while(*str){
-		add_to_transmit(*str);
-		str++;
-	}
-}
 
 uint32_t clock_frequency_measure()
 {

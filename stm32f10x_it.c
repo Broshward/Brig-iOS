@@ -1,5 +1,6 @@
 #include "stm32f10x_it.h"
 #include "main.h"
+#include "crontab.h"
 //#include "stm32_eval.h"
 
 extern void add_END_to_transmit();
@@ -207,7 +208,7 @@ void EXTI15_10_IRQHandler(void)
 }
 void RTCAlarm_IRQHandler(void)
 {
-	add_to_transmit_str((uint8_t*)"ALR:");
+	add_to_transmit_str("ALR:");
 	add_to_transmit_uint16(RTC->ALRH);
 	add_to_transmit_uint16(RTC->ALRL);
 	add_END_to_transmit();

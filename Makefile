@@ -1,6 +1,6 @@
 TOP=$(CURDIR)
 PROGRAM=main
-FILES=main.c startup.c stm32f10x_it.c crontab.c strings.c #protocol.c
+FILES=main.c startup.c stm32f10x_it.c crontab.c strings.c uart.c #protocol.c
 LIBDIR=$(TOP)/STM32F10x_StdPeriph_Lib_V3.5.0
 #Adust the following line to the library in use
 STMLIB=$(LIBDIR)/Libraries
@@ -35,7 +35,7 @@ LFLAGS  = -nostartfiles -Wl,-Tlinker.ld -L$(LIBDIR) -L$(STDLIBDIR)
 LFLAGS += -fno-exceptions -Wl,-X,--gc-sections,--no-whole-archive
 LFLAGS_LIBS = #-fno-exceptions -ffunction-sections -fdata-sections -Wl,-X,--gc-sections
 
-all: clean compile disasm size tags #info
+all: clean compile tags disasm size #info
 
 #-----------------------------------------------------------------------------------------------------
 clean:
@@ -67,9 +67,9 @@ clean_tags:
 	rm tags
 	
 tags: clean_tags
-	arm-linux-gnueabihf-gcc -M $(FILES) | sed -e 's/[\\ ]/\n/g' | \
+	$(CC) -M $(CFLAGS) $(FILES) | sed -e 's/[\\ ]/\n/g' | \
 		sed -e '/^$$/d' -e '/\.o:[ \t]*$$/d' | \
-		ctags -L - --c++-kinds=+p --fields=+iaS --extras=+q
+		ctags -L - --c++-kinds=+p --fields=+iaS --extras=+q 
 
 #-----------------------------------------------------------------------------------------------------
 libs: clean_libs

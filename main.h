@@ -1,6 +1,5 @@
 #include "stm32f10x.h"
 #include "core_cm3.h"
-#include "crontab.h"
 
 uint32_t sys_clock;
 uint32_t temperature;

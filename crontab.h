@@ -1,12 +1,13 @@
 #include "stm32f10x.h"
 #include <stddef.h>
 #include "strings.h"
+#include "uart.h"
 
-extern void add_to_transmit(uint8_t num);
-extern void add_to_transmit_uint16(uint16_t num);
-extern void add_to_transmit_uint32(uint32_t num);
-extern void add_to_transmit_str(uint8_t *str);
-extern void add_END_to_transmit();
+//extern void add_to_transmit(uint8_t num);
+//extern void add_to_transmit_uint16(uint16_t num);
+//extern void add_to_transmit_uint32(uint32_t num);
+//extern void add_to_transmit_str(uint8_t *str);
+//extern void add_END_to_transmit();
 
 extern int32_t localtime; // Local time relatively UTC in seconds, because exist fractional hour time zones
 
