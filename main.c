@@ -48,8 +48,6 @@ int main()
 //	cron_add_tab("* * * * * * 40013804 4000281c\0");
 
 //	Tables for greenhouse: 
-	SETMASK(GPIOB->CRL, GPIO_CRL_CNF2|GPIO_CRL_MODE2, 0b0001);
-	SETMASK(GPIOB->CRL, GPIO_CRL_CNF3|GPIO_CRL_MODE3, 0b0001); 
 	crontab[0] = "0 0 5,7-19,21 * * * D40010C10 V4";
 	crontab[1] = "0 1 5,7-19,21 * * * D40010C14 V4";
 	crontab[2] = "0 30 10-16 * * * D40010C10 V4";
@@ -58,7 +56,7 @@ int main()
 	crontab[5] = "1 2 5,7-19,21 * * * D40010C14 V10";
 	crontab[6] = "1 31 10-16 * * * D40010C10 V10";
 	crontab[7] = "1 32 10-16 * * * D40010C14 V10";
-	crontab[8] = "*/15 * * * * * D40003000 VAAAA";
+//	crontab[8] = "*/15 * * * * * D40003000 VAAAA";
 //	crontab[9] = "0 * * * * * D40011014 V200";
 //	crontab[10] = "0 * * * * * D40011014 V200";
 //	crontab[11] = "0 * * * * * D40011014 V200";

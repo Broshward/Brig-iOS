@@ -41,6 +41,12 @@ if "-bt05" in sys.argv:
             SCAN=port.readall()
             print SCAN
             exit(1)
+
+if "-i" in sys.argv:
+    interactive=1;
+    sys.argv.remove("-i")
+else:
+    interactive=None;
         
 if len(sys.argv)>1:
     cmd = sys.argv[1]
@@ -49,13 +55,23 @@ if len(sys.argv)>1:
         time = int(cmd[3:])
         print time
         cmd = 'ST' + chr(time>>24) + chr((time>>16)&0xFF) + chr((time>>8)&0xFF) + chr(time&0xFF)
+    elif cmd[:3] in ("Rd:"):
+        count=int(cmd[3:5],16)
+        print count
+        addr=int(cmd[5:],16)
+        print addr
+        cmd = cmd[:2] + chr(count) + chr(addr&0xFF) + chr((addr>>8)&0xFF) + chr((addr>>16)&0xFF) + chr(addr>>24) 
+        print cmd
     elif cmd[:3] in ("Rb:","Rh:","Rw:","Rs:"):
         addr=int(cmd[3:],16)
         cmd = cmd[:2] + chr(addr&0xFF) + chr((addr>>8)&0xFF) + chr((addr>>16)&0xFF) + chr(addr>>24) 
+    #elif cmd[:3] in ("RC"):
     cmd = cmd.replace(END_change,END_change+END_change_change)
     cmd = cmd.replace(END,END_change+END_change)
     cmd += END
     print cmd
+    print [ord(i) for i in cmd]
+#    exit()
     port.write(cmd)
 #    exit(0)
 
@@ -69,17 +85,19 @@ while(1):
     if pack:
         pack = pack.replace(END_change+END_change,END)
         pack = pack.replace(END_change+END_change_change,END_change)
-        pack = re.search('(\w+:)(.*)',pack,re.DOTALL)
-        if pack==None: continue
-        num=0
-        if pack.group(1)=='s:':
-            print pack.group(1), pack.group(2)
-        else:
-        #if pack.group(1) in ('ALR:','ACT:','b:','h:','w:')
-            for i in range(len(pack.group(2))):
-                num += ord(pack.group(2)[~i])<<(i*8) 
-            print pack.group(1), num
-        if "-i" not in sys.argv:
+        result = re.search('(\w+:)(.*)',pack,re.DOTALL)
+        if result==None: 
+            print [hex(ord(i)) for i in pack]
+        elif result.group(1)=='s:':
+            print result.group(1), result.group(2)
+        elif result.group(1) in ('ALR:','ACT:','b:','h:','w:'):
+            num=0
+            for i in range(len(result.group(2))):
+                num += ord(result.group(2)[~i])<<(i*8) 
+            print result.group(1), num
+        
+        #elif pack.group(1)=='d:':
+        if interactive == None:
             exit(0)
 #    while (END in s):
 #        packet += s.split(END,1)[0]

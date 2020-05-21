@@ -42,6 +42,15 @@ void cmd_perform(char *str)
 		add_to_transmit_str(*(char**)(str+2));
 		add_END_to_transmit();
 	}
+	if (!_strncmp(str,"Rd",2)){  //Read count of data array[count] from given memory address 		
+		uint8_t count=*(uint8_t*)(str+2);
+		uint8_t* addr=*(uint8_t**)(str+3);
+		add_to_transmit_str("d:");
+		for (int i=0 ; i<count ; i++)
+			add_to_transmit(*(addr+i));
+		add_END_to_transmit();
+	}
+
 //------------------- Please ADD here data for custom description------------------
 	// descript for custom[1,2,3,4..n] string transmit throught corresponding 
 	// R1, R2, R3, R4 ... Rn requests
@@ -52,32 +61,43 @@ void cmd_perform(char *str)
 //		add_to_transmit(*addr);
 //	}
 	
-//	{
-//		str += sizeof("Rc");
-//		uint32_t *dest=0,*src=0,value=0;
-//		while(*(str-1)!='\0'){
-//			switch (*str++) {
-//				case 'D':
-//					dest = (uint32_t*)hex_num_parse(&str);
-//				break;
-//				case 'S':
-//					src = (uint32_t*)hex_num_parse(&str);
-//				break;
-//				case 'V':
-//					value = hex_num_parse(&str);
-//				break;
-//				case ',':
-//				case 0:
-//					if (dest && src)
-//						*dest = *src;
-//					if (dest && value)
-//						*dest = value;
-//				break;
-//				default:
-//				break;
-//			}
-//		}
-//	}
+	if (!_strncmp(str,"CR",2)){ // Execute crontab compatible string
+		str += 2;
+		uint32_t *dest=0,*src=0,value=0,temp=0;
+		while(*(str-1)!='\0'){
+//			if (dest==0) dest = (uint32_t*)hex_num_parse(&str);
+//			else if 
+			switch (*str++) { // For old string format
+				case 'D':
+					dest = (uint32_t*)hex_num_parse(&str);
+				break;
+				case 'S':
+					src = (uint32_t*)hex_num_parse(&str);
+				break;
+				case 'V':
+					value = hex_num_parse(&str);
+				break;
+				case ',':
+				case 0:
+					if (dest){
+						if (src)
+							*dest = *src;
+						else
+							*dest = value;
+					}
+					else if (src){
+						//add_to_transmit_str("d:");
+						add_to_transmit_uint32(*src);
+						add_END_to_transmit();
+					}
+					dest=0;
+					src=0;
+				break;
+				default:
+				break;
+			}
+		}
+	}
 // Special commands
 	if (!_strncmp(str,"RT",sizeof("RT")-1)){ //Read time(system) UTC
 		add_to_transmit_str("TM:");

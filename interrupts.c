@@ -1,4 +1,4 @@
-#include "stm32f10x_it.h"
+#include "interrupts.h"
 #include "main.h"
 #include "crontab.h"
 //#include "stm32_eval.h"
