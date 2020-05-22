@@ -63,21 +63,23 @@ void cmd_perform(char *str)
 	
 	if (!_strncmp(str,"CR",2)){ // Execute crontab compatible string
 		str += 2;
-		uint32_t *dest=0,*src=0,value=0,temp=0;
+		uint32_t *dest=0,*src=0,value=0;
 		while(*(str-1)!='\0'){
-//			if (dest==0) dest = (uint32_t*)hex_num_parse(&str);
-//			else if 
+			if (!dest) dest = (uint32_t*)hex_num_parse(&str);
 			switch (*str++) { // For old string format
-				case 'D':
-					dest = (uint32_t*)hex_num_parse(&str);
-				break;
+				case '*':
 				case 'S':
 					src = (uint32_t*)hex_num_parse(&str);
 				break;
+				case '=':
 				case 'V':
 					value = hex_num_parse(&str);
 				break;
+				case 'F':
+					// Add function calling at given address
+				break;
 				case ',':
+				case ';':
 				case 0:
 					if (dest){
 						if (src)

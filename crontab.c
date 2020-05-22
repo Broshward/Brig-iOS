@@ -417,7 +417,7 @@ void utc_to_time(TIME *tm, uint32_t utc)
 
 uint32_t hex_num_parse(char **str)
 {
-	uint32_t temp_num=0;
+	uint32_t temp_num=0; // -1 more better value for this
 	while(1){
 		uint8_t dig = **str;
 		if ((dig>='0') && (dig<='9'))
