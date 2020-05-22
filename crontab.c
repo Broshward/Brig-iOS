@@ -20,22 +20,30 @@ add_END_to_transmit();
 	char *str = strblank(crontab[number],6)+1;
 	uint32_t *dest=0,*src=0,value=0;
 	while(*(str-1)!='\0'){
-		switch (*str++) {
-			case 'D':
-				dest = (uint32_t*)hex_num_parse(&str);
-			break;
+		if (!dest) dest = (uint32_t*)hex_num_parse(&str);
+		switch (*str++) { 
+			case '*':
 			case 'S':
 				src = (uint32_t*)hex_num_parse(&str);
 			break;
+			case '=':
 			case 'V':
 				value = hex_num_parse(&str);
 			break;
+			case 'F':
+				// Add function calling at given address
+			break;
 			case ',':
+			case ';':
 			case 0:
-				if (dest && src)
-					*dest = *src;
-				if (dest && value)
-					*dest = value;
+				if (dest){
+					if (src)
+						*dest = *src;
+					else
+						*dest = value;
+				}
+				dest=0;
+				src=0;
 			break;
 			default:
 			break;
@@ -109,10 +117,10 @@ uint32_t next_time(char *str)
 	uint8_t alarms_choice[60];
 	uint8_t max=12; //First month are check (field=4)
 	uint8_t beg_num=255,end_num=255,temp_num=255;
-	uint8_t index=0,field=4;
+	uint8_t index=0,field=4; //field=4 for month checked, !!! YEAR not checked !!!
 	char *save_str = str;
 	str = strblank(save_str,field)+1;// +1 because field after space symbol ' ' 
-	while(field!=0xFF){
+	while(1){ //(field!=0xFF){  --- The BREAK is below
 		if ((uint8_t)(*str-'0')<10) //if (*str>='0' && *str<='6') // Number in the field finded
 			beg_num = end_num = dec_num_parse(&str);
 		if ((*str=='-') || (*str=='*')){
@@ -141,7 +149,7 @@ uint32_t next_time(char *str)
 				alarms_choice[index++] = beg_num;
 		}
 		if (*str==' '){
-			str++;
+			str++; // ??? what for ???
 			if (beg_num<=max)
 				alarms_choice[index++] = beg_num;
 			//find next alarm time in alarms_choice
@@ -168,6 +176,7 @@ uint32_t next_time(char *str)
 			}
 			field--; 
 			max=max_field(&tm, field);
+			if (field==0xFF) break; 
 			str = field ? strblank(save_str,field)+1 : save_str;
 			index=0;
 		}
