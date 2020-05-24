@@ -2,6 +2,7 @@
 #include "main.h"
 #include "uart.h"
 #include "crontab.h"
+#include "spi.h"
 //#include "syscalls.h"
 //#include "stdlib.h"
 //#include <string.h>
@@ -48,68 +49,74 @@ int main()
 //	cron_add_tab("* * * * * * 40013804 4000281c\0");
 
 //	Tables for greenhouse: 
-	crontab[0] = "0 0 5,7-19,21 * * * D40010C10 V4";
-	crontab[1] = "0 1 5,7-19,21 * * * D40010C14 V4";
-	crontab[2] = "0 30 10-16 * * * D40010C10 V4";
-	crontab[3] = "0 31 10-16 * * * D40010C14 V4";
-	crontab[4] = "1 1 5,7-19,21 * * * D40010C10 V10";
-	crontab[5] = "1 2 5,7-19,21 * * * D40010C14 V10";
-	crontab[6] = "1 31 10-16 * * * D40010C10 V10";
-	crontab[7] = "1 32 10-16 * * * D40010C14 V10";
-//	crontab[8] = "*/15 * * * * * D40003000 VAAAA";
-//	crontab[9] = "0 * * * * * D40011014 V200";
-//	crontab[10] = "0 * * * * * D40011014 V200";
-//	crontab[11] = "0 * * * * * D40011014 V200";
+	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4";
+	crontab[1] = "0 1 5,7-19,21 * * * 40010C14 V4";
+	crontab[2] = "0 30 10-16 * * * 40010C10 V4";
+	crontab[3] = "0 31 10-16 * * * 40010C14 V4";
+	crontab[4] = "1 1 5,7-19,21 * * * 40010C10 V10";
+	crontab[5] = "1 2 5,7-19,21 * * * 40010C14 V10";
+	crontab[6] = "1 31 10-16 * * * 40010C10 V10";
+	crontab[7] = "1 32 10-16 * * * 40010C14 V10";
+	crontab[8] = "*/15 * * * * * 40003000 VAAAA";
+//	Test and tuning example
+//	crontab[9] = "*/4 * * * * * 40010C10=10";
+//	crontab[10] = "1-59/4 * * * * * 40010C14=10";
+//	crontab[11] = "2-59/4 * * * * * 40010C10=4";
+//	crontab[12] = "3-59/4 * * * * * 40010C14=4";
+//	crontab[13] = "*/2 * * * * * 20000F00=AAAA";
 
-//	RCC->CSR |= RCC_CSR_LSION;
-//	while(!(RCC->CSR & RCC_CSR_LSIRDY));
+	RCC->CSR |= RCC_CSR_LSION;
+	while(!(RCC->CSR & RCC_CSR_LSIRDY));
 //	IWDG->KR = 0xCCCC;
 //	IWDG->KR = 0x5555;
 //	IWDG->PR = 0b111;
-//	//DBGMCU->CR |= DBGMCU_IWDG_STOP;
+	//DBGMCU->CR |= DBGMCU_IWDG_STOP;
 
-	RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
-//	SETMASK(GPIOC->CRH, GPIO_CRH_CNF8|GPIO_CRH_MODE8, 0b0001); 
-//	SETMASK(GPIOC->CRH, GPIO_CRH_CNF9|GPIO_CRH_MODE9, 0b0001); 
-//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF0|GPIO_CRL_MODE0, 0b0001); 
-//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF1|GPIO_CRL_MODE1, 0b0001); 
-////	SETMASK(GPIOB->CRL, GPIO_CRL_CNF4|GPIO_CRL_MODE4, 0b0001); 
-//	SETMASK(GPIOB->CRL, GPIO_CRL_CNF5 |GPIO_CRL_MODE5 , 0b0001); 
-////	SETMASK(GPIOB->CRL, GPIO_CRL_CNF6 |GPIO_CRL_MODE6 , 0b0001); 
-////	SETMASK(GPIOB->CRL, GPIO_CRL_CNF7 |GPIO_CRL_MODE7 , 0b0001); 
-//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF8 |GPIO_CRH_MODE8 , 0b0001); 
-//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF9 |GPIO_CRH_MODE9 , 0b0001); 
-//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF10|GPIO_CRH_MODE10, 0b0001); 
-//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF11|GPIO_CRH_MODE11, 0b0001); 
-//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF12|GPIO_CRH_MODE12, 0b0001); 
-//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF13|GPIO_CRH_MODE13, 0b0001); 
-//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF15|GPIO_CRH_MODE15, 0b0001); 
-//	SETMASK(GPIOB->CRH, GPIO_CRH_CNF15|GPIO_CRH_MODE15, 0b0001); 
-//	GPIOB->BSRR = 0b1;
-//	GPIOB->BRR = 0b1111100010;
-//	if (GPIOC->ODR & (1<<9))
-//		sbi(GPIOB->BSRR,13);
-//	if (GPIOC->ODR & (1<<8))
-//		sbi(GPIOB->BSRR,12);
-//	if (RCC->CSR & (RCC_CSR_PINRSTF))
-//		sbi(GPIOB->BSRR,1);
-//	if (RCC->CSR & (RCC_CSR_PORRSTF))
-//		sbi(GPIOB->BSRR,5);
-//	if (RCC->CSR & (RCC_CSR_SFTRSTF))
-//		sbi(GPIOB->BSRR,6);
-//	if (RCC->CSR & (RCC_CSR_IWDGRSTF))
-//		sbi(GPIOB->BSRR,7);
-//	if (RCC->CSR & (RCC_CSR_WWDGRSTF))
-//		sbi(GPIOB->BSRR,8);
-//	if (RCC->CSR & (RCC_CSR_LPWRRSTF))
-//		sbi(GPIOB->BSRR,9);
-	
-sys_clock=clock_frequency_measure();
-
-RCC->APB2ENR |= RCC_APB2Periph_USART1;//Включение тактовой USART (на APB1 шине висит)
-RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 RCC->APB2ENR |= RCC_APB2Periph_AFIO;
+	AFIO->MAPR |= 0b010<<24; // JTAG off SWD enable
+
+RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
+	GPIOB->CRL &= ~((0b1111 << 2*4) | (0b1111 << 4*4) | (0b1111 << 5*4)); //GPIOB 2,4 - output for relay control
+	GPIOB->CRL |= (0b0001 << 2*4) | (0b0001 << 4*4) | (0b0001 << 5*4); //GPIOB 2,4 - output for relay control
+	GPIOB->ODR = 0; // For reset pullup of GPIOB 4 pin
+
+	GPIOB->CRH &= ~((0b1111 << 0*4) | (0b1111 << 1*4));//GPIOB 8 - output for 5->12 Volt DC-DC, GPIOB 9 - input with pulldown for DC-DC feedback
+	GPIOB->CRH |= (0b0001 << 0*4) | (0b1000 << 1*4);//GPIOB 8 - output for 5->12 Volt DC-DC, GPIOB 9 - input with pulldown for DC-DC feedback
+
+// Errors flags detects	
+	if (RCC->CSR & (RCC_CSR_PINRSTF))
+		sbi(flags,PINRST);
+	if (RCC->CSR & (RCC_CSR_PORRSTF))
+		sbi(flags,PORRST);
+	if (RCC->CSR & (RCC_CSR_SFTRSTF))
+		sbi(flags,STFRST);
+	if (RCC->CSR & (RCC_CSR_IWDGRSTF))
+		sbi(flags,IWDGRST);
+	if (RCC->CSR & (RCC_CSR_WWDGRSTF))
+		sbi(flags,WWDGRST);
+	if (RCC->CSR & (RCC_CSR_LPWRRSTF))
+		sbi(flags,LPWRRST);
+	if (GPIOB->ODR & (1<<2))
+		sbi(flags,CHANNEL1_IS_SET);
+	if (GPIOB->ODR & (1<<4))
+		sbi(flags,CHANNEL2_IS_SET);
+	
+//RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
+//	port_config = (0b0001 << 4*4);
+//	GPIOA->CRH &= ~port_config; 
+//	GPIOA->CRH |= port_config;
+
+RCC->APB2ENR |= RCC_APB2Periph_GPIOD;
+	AFIO->MAPR |= AFIO_MAPR_PD01_REMAP;
+	GPIOD->CRL &= ~((0b1111 << 0*4) | (0b1111 << 1*4)); //GPIOD 0,1 - output
+	GPIOD->CRL |= (0b0001 << 0*4) | (0b0001 << 1*4); //GPIOD 0,1 - output
+
+sys_clock=clock_frequency_measure();
+RCC->APB2ENR |= RCC_APB2Periph_USART1; //Включение тактовой USART 
 UART_initialization(9600);
+
+//Software_SPI_init();
+SPI_initialization();
 
 //-----------DMA1---------------------------
 	//---- DMA for transmit buffer-----------------
@@ -130,20 +137,34 @@ UART_initialization(9600);
 	set_alarm(next_alarm());
 
 	while(1){
+	//	WRSR(2);
+	//	RDSR(spi_buf);
+	//	WRSR(0);
+	//	RDSR(spi_buf);
+	//	READ(0x123456,spi_buf,255);
+	//	SECTOR_ER(0x123456);
+	//	READ(0x123456,spi_buf,255);
+	//	READ(0x123456-256,spi_buf,255);
+	//	PAGE_PROG(0x123456, "Hello world", _strlen("Hello world"));
+	//	READ(0x123456,spi_buf,255);
+
+	//	DR_tx=0x55; // For Software SPI first test
+	//	_SPI_rw(); // For Software SPI first test
+	//	SPI_rw(0x56); // For Software SPI first test
 		transmit_uart_buffer();
 		recieve_uart_buffer();
 		if (RTC->CNTH!=0){				// pseudo protection from unexpected zeroing RTC. (RTC->CNT == 0)
 			if (RTC->CNTL!=(uint16_t)recent_time){
 				recent_time = RTC->CNTL + (RTC->CNTH<<16);
 				recent_alarm= RTC->ALRL + (RTC->ALRH<<16);
-				if (bit_is_set(GPIOB->ODR,0))
-					sbi(GPIOB->BRR,0);
+				if (bit_is_set(GPIOD->ODR,0))
+					sbi(GPIOD->BRR,0);
 				else
-					sbi(GPIOB->BSRR,0);
+					sbi(GPIOD->BSRR,0);
 			}
 		}
 		else if (recent_time!=0){
-			sbi(GPIOB->BSRR,11);
+			sbi(flags,TIME_CLEAR);
 			RTC->CRL |= RTC_CRL_CNF;     // unblock write access for PRL, CNT, DIV  register of RTC
 			RTC->CNTH = recent_time>>16;
 			RTC->CNTL = (uint16_t)recent_time;
@@ -151,19 +172,16 @@ UART_initialization(9600);
 			RTC->ALRL = (uint16_t)recent_alarm+1;
 			RTC->CRL &= ~RTC_CRL_CNF;//  for write protect PRL, CNT, DIV
 		}
+		if (bit_is_set(GPIOB->ODR,8)) // Signal generator for 5V->12V DC-DC 
+				sbi(GPIOB->BRR,8);
+		else
+			if (bit_is_clear(GPIOB->IDR,9)){ // If output of DC-DC <12V
+				sbi(GPIOB->BSRR,8);
+//				for (int i=0;i<3;i++);
+//				sbi(GPIOB->BRR,8);
+			}
 	}
 
-//-----------SPI---------------------------
-//	RCC->APB2ENR |= RCC_APB2Periph_SPI1;  //Включение тактовой SPI
-//	SPI1->CR2 = SPI_CR2_RXNEIE | SPI_CR2_SSOE;
-//	SPI1->CR1 = SPI_CR1_MSTR | SPI_CR1_SPE;
-//	SETMASK(SPI1->CR1, SPI_CR1_BR, 0b10);
-//	SETMASK(GPIOA->CRL, GPIO_CRL_CNF4|GPIO_CRL_MODE4, 0b0001); 
-//	sbi(GPIOA->BSRR,4);
-//	SETMASK(GPIOA->CRL, GPIO_CRL_CNF5|GPIO_CRL_MODE5, 0b1011); 
-//	SETMASK(GPIOA->CRL, GPIO_CRL_CNF6|GPIO_CRL_MODE6, 0b0100); 
-//	SETMASK(GPIOA->CRL, GPIO_CRL_CNF7|GPIO_CRL_MODE7, 0b1011); 
-//	INTERRUPT_ENABLE(35);
 //
 //	RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
 //	SETMASK(GPIOC->CRH, GPIO_CRH_CNF8|GPIO_CRH_MODE8, 0b0001); 

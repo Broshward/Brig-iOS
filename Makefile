@@ -1,6 +1,6 @@
 TOP=$(CURDIR)
 PROGRAM=main
-FILES=main.c startup.c interrupts.c crontab.c strings.c uart.c #protocol.c
+FILES=main.c startup.c interrupts.c crontab.c strings.c uart.c spi.c 
 LIBDIR=$(TOP)/STM32F10x_StdPeriph_Lib_V3.5.0
 #Adust the following line to the library in use
 STMLIB=$(LIBDIR)/Libraries

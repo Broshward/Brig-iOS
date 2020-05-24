@@ -4,6 +4,18 @@
 uint32_t sys_clock;
 uint32_t temperature;
 
+uint32_t flags;
+#define HARD_FAULT 0
+#define TIME_CLEAR 1
+#define CHANNEL1_IS_SET 2
+#define CHANNEL2_IS_SET 3
+#define PINRST 31
+#define PORRST 30
+#define STFRST 29
+#define IWDGRST 28
+#define WWDGRST 27
+#define LPWRRST 26 //0x4000000
+
 #define SYS_FREQ 24000000
 //#define INTERRUPT_PARSER
 #define CIRCULAR_PARSER
@@ -12,6 +24,8 @@ uint32_t temperature;
 #define PIPE_ADDRESS   12;
 #define UART_SPEED   115200;
 
+
+#define bit_band_of(reg,bit) (uint32_t*)(((uint32_t)(reg)&0x60000000) | (0x02000000) | (((uint32_t)(reg)&0xFFFFF)<<5) | (bit<<2))
 
 #define sbi(reg,num) reg |= (1<<num)
 #define cbi(reg,num) reg &= (~((uint32_t)(1<<num)))

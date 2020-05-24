@@ -11,7 +11,9 @@ void NMI_Handler(void)
 }
 void HardFault_Handler(void)
 {
-	while(1);
+	sbi(flags,HARD_FAULT);
+	//Reset_Handler(void);
+	//while(1);
 }
 void MemManage_Handler(void)
 {
