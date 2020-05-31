@@ -17,8 +17,8 @@ void cron_action(uint8_t number)
 {
 #ifdef DEBUG
 add_to_transmit_str("ALR:");
-add_to_transmit_uint16(RTC->ALRH);
-add_to_transmit_uint16(RTC->ALRL);
+add_to_transmit_data((uint8_t*)&RTC->ALRL, 2); // LSB first
+add_to_transmit_data((uint8_t*)&RTC->ALRH, 2);
 add_END_to_transmit();
 add_to_transmit_str("ACT:");
 add_to_transmit(number);
@@ -137,7 +137,10 @@ uint32_t next_time(char *str)
 			}
 			else{
 				str++;
-				beg_num=0;
+				if (field==4 || field == 3)
+					beg_num=1; // For 'day','month' field. Day or month cannot be zero.
+				else
+					beg_num=0;
 				end_num=max;
 			}
 			if (*str=='/'){
