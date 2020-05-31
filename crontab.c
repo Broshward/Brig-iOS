@@ -1,3 +1,4 @@
+#include "main.h"
 #include "crontab.h"
 
 //	uint8_t sec[60];
@@ -14,9 +15,15 @@ int32_t localtime = 3*3600;
 
 void cron_action(uint8_t number)
 {
+#ifdef DEBUG
+add_to_transmit_str("ALR:");
+add_to_transmit_uint16(RTC->ALRH);
+add_to_transmit_uint16(RTC->ALRL);
+add_END_to_transmit();
 add_to_transmit_str("ACT:");
 add_to_transmit(number);
 add_END_to_transmit();
+#endif
 	char *str = strblank(crontab[number],6)+1;
 	uint32_t *dest=0,*src=0,value=0;
 	while(*(str-1)!='\0'){

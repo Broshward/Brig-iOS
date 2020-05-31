@@ -1,20 +1,45 @@
+#define SPI_FLASH // For write journaling to external flash processing
+//#define DEBUG		// For send to UART information about alarm time and action number
+
+
 #include "stm32f10x.h"
 #include "core_cm3.h"
 
 uint32_t sys_clock;
 uint32_t temperature;
 
+struct JOURNALING_DATA {
+	uint32_t time __attribute__ ((__packed__)); //(( aligned(8) ))
+	uint16_t ADC_channels[12] __attribute__ ((__packed__));
+	uint32_t flags __attribute__ ((__packed__));
+	const char end;
+} jdata; // Data for journaling in external flash
+uint16_t ADC_average[12];
+
+#define TIMEH_of_settime BKP->DR1 // Time of last setting time MSB
+#define TIMEL_of_settime BKP->DR2 // LSB
+#define flash_cur_addr_H BKP->DR3 
+#define flash_cur_addr_L BKP->DR4 
+
 uint32_t flags;
+
 #define HARD_FAULT 0
 #define TIME_CLEAR 1
 #define CHANNEL1_IS_SET 2
 #define CHANNEL2_IS_SET 3
+#define FLASH_CUR_ADDR_is_0 4 // probably BKP reset was occur
+#define FLASH_CUR_ADDR_is_MIN_ADDR 5 // probably Flash memory is ended
+#define FLASH_is_ended 6
+#define FLASH_CUR_ADDR_less_MIN 7
 #define PINRST 31
 #define PORRST 30
 #define STFRST 29
 #define IWDGRST 28
 #define WWDGRST 27
 #define LPWRRST 26 //0x4000000
+
+#define FLASH_MIN_ADDR 4096 // First 4096 bytes reserved for user data
+#define FLASH_MAX_ADDR 0x3FFFFF // Last byte of flash array (Pm25LQ032C). Specify for your flash chip MAX byte address please
 
 #define SYS_FREQ 24000000
 //#define INTERRUPT_PARSER

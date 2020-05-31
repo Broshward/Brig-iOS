@@ -1,0 +1,1 @@
+./debug_analyse.py "ST:"`date +%s`

@@ -3,6 +3,8 @@
 #include "uart.h"
 #include "crontab.h"
 #include "spi.h"
+#include "adc.h"
+#include "dma.h"
 //#include "syscalls.h"
 //#include "stdlib.h"
 //#include <string.h>
@@ -10,11 +12,13 @@
 uint32_t clock_frequency_measure();
 
 const uint32_t sys_time = 1533128400; // Birthtime of BrigðiOS. Historical remains :-))
+uint32_t *test_value=(uint32_t*)0x2000080C;
 
 uint32_t recent_time, recent_alarm;
 
 int main()
 {
+*test_value=0x12345678;
     RCC->APB1ENR |= RCC_APB1Periph_BKP | RCC_APB1Periph_PWR;
 	PWR->CR |= PWR_CR_DBP; //Unblock RTC & BKP register for write access
 	RCC->BDCR |= RCC_BDCR_RTCSEL_LSE | RCC_BDCR_RTCEN | RCC_BDCR_LSEON; //
@@ -49,15 +53,17 @@ int main()
 //	cron_add_tab("* * * * * * 40013804 4000281c\0");
 
 //	Tables for greenhouse: 
-	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4";
-	crontab[1] = "0 1 5,7-19,21 * * * 40010C14 V4";
-	crontab[2] = "0 30 10-16 * * * 40010C10 V4";
-	crontab[3] = "0 31 10-16 * * * 40010C14 V4";
-	crontab[4] = "1 1 5,7-19,21 * * * 40010C10 V10";
-	crontab[5] = "1 2 5,7-19,21 * * * 40010C14 V10";
-	crontab[6] = "1 31 10-16 * * * 40010C10 V10";
-	crontab[7] = "1 32 10-16 * * * 40010C14 V10";
-	crontab[8] = "*/15 * * * * * 40003000 VAAAA";
+	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4"; // GPIOB->BSRR = 4
+	crontab[1] = "0 1 5,7-19,21 * * * 40010C14 V4"; // GPIOB->BRR = 4
+	crontab[2] = "0 30 10-16 * * * 40010C10 V4";	// GPIOB->BSRR = 4
+	crontab[3] = "0 31 10-16 * * * 40010C14 V4";	// GPIOB->BRR = 4
+	crontab[4] = "1 1 5,7-19,21 * * * 40010C10 V10";// GPIOB->BSRR = 0x10
+	crontab[5] = "1 2 5,7-19,21 * * * 40010C14 V10";// GPIOB->BRR = 0x10
+	crontab[6] = "1 31 10-16 * * * 40010C10 V10";	// GPIOB->BSRR = 0x10
+	crontab[7] = "1 32 10-16 * * * 40010C14 V10";	// GPIOB->BRR = 0x10
+	crontab[8] = "*/15 * * * * * 40003000 VAAAA";	// IWDG->KR = 0xAAAA
+//	crontab[9] = "5 * * * * * 42248100=1"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
+
 //	Test and tuning example
 //	crontab[9] = "*/4 * * * * * 40010C10=10";
 //	crontab[10] = "1-59/4 * * * * * 40010C14=10";
@@ -83,7 +89,7 @@ RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 	GPIOB->CRH &= ~((0b1111 << 0*4) | (0b1111 << 1*4));//GPIOB 8 - output for 5->12 Volt DC-DC, GPIOB 9 - input with pulldown for DC-DC feedback
 	GPIOB->CRH |= (0b0001 << 0*4) | (0b1000 << 1*4);//GPIOB 8 - output for 5->12 Volt DC-DC, GPIOB 9 - input with pulldown for DC-DC feedback
 
-// Errors flags detects	
+// Errors and reset flags detects	
 	if (RCC->CSR & (RCC_CSR_PINRSTF))
 		sbi(flags,PINRST);
 	if (RCC->CSR & (RCC_CSR_PORRSTF))
@@ -100,12 +106,9 @@ RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 		sbi(flags,CHANNEL1_IS_SET);
 	if (GPIOB->ODR & (1<<4))
 		sbi(flags,CHANNEL2_IS_SET);
-	
-//RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
-//	port_config = (0b0001 << 4*4);
-//	GPIOA->CRH &= ~port_config; 
-//	GPIOA->CRH |= port_config;
+	RCC->CSR |= RCC_CSR_RMVF; // Clear reset flags
 
+	
 RCC->APB2ENR |= RCC_APB2Periph_GPIOD;
 	AFIO->MAPR |= AFIO_MAPR_PD01_REMAP;
 	GPIOD->CRL &= ~((0b1111 << 0*4) | (0b1111 << 1*4)); //GPIOD 0,1 - output
@@ -117,22 +120,8 @@ UART_initialization(9600);
 
 //Software_SPI_init();
 SPI_initialization();
-
-//-----------DMA1---------------------------
-	//---- DMA for transmit buffer-----------------
-//	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
-//	DMA1_Channel4->CPAR = (uint32_t)&USART1->DR;
-//	DMA1_Channel4->CMAR = (uint32_t)transmit_buf;
-//	DMA1_Channel4->CNDTR = sizeof(transmit_buf);
-//	DMA1_Channel4->CCR = DMA_CCR4_MINC | DMA_CCR4_DIR;
-
-	//---- DMA for recieve to buffer-----------------
-//	DMA1_Channel5->CPAR = (uint32_t)&USART1->DR;
-//	DMA1_Channel5->CMAR = (uint32_t)recieve_buf;
-//	DMA1_Channel5->CNDTR = sizeof(recieve_buf);
-//	DMA1_Channel5->CCR = DMA_CCR4_MINC | DMA_CCR4_CIRC | DMA_CCR4_EN;
-//	USART1->CR3 = USART_CR3_DMAT | USART_CR3_DMAR; 
-//	USART1->SR = 0;
+DMA_init();
+ADC_init();
 
 	set_alarm(next_alarm());
 
@@ -180,13 +169,57 @@ SPI_initialization();
 //				for (int i=0;i<3;i++);
 //				sbi(GPIOB->BRR,8);
 			}
+		if (DMA1->ISR &	DMA1_FLAG_TC1){
+			DMA1->IFCR=0xF; //Clear DMA flags
+			uint16_t *channels=jdata.ADC_channels; 
+			for (int i=0; i<12;i++){
+				ADC_average[i] = ((ADC_average[i]<<2)-ADC_average[i] + channels[i])>>2; // (average[i]*3+channels[i])/4  - Average for 32 value filter
+				// Open greenhouse  for ventulation!
+				//if (i==num && ADC_average[i]>value_max && !(GPIOx->ODR & 1<<y)){
+				//	GPIOx->BSRR = 1<<y;
+				//	for (uint32_t j=0;j<UINT_MAX;j++); //Pause
+				//	GPIOx->BRR = 1<<y;
+				//}
+				//if (i==num && ADC_average[i]<value_min && (GPIOx->ODR & 1<<y)){
+				//	GPIOx->BRR = 1<<y;
+				//	for (uint32_t j=0;j<UINT_MAX;j++); //Pause
+				//	GPIOx->BRR = 1<<y;
+				//}
+			}
+#ifdef SPI_FLASH
+			uint8_t send_size=sizeof(jdata);
+			((uint16_t*)&jdata)[1] = RTC->CNTH;
+			((uint16_t*)&jdata)[0] = RTC->CNTL;
+			uint32_t flash_cur_addr;
+			*((uint16_t*)&flash_cur_addr) = flash_cur_addr_L;
+			*((uint16_t*)&flash_cur_addr+1) = flash_cur_addr_H; 
+			if (flash_cur_addr==0){ // BKP reset was occur
+				sbi(flags,FLASH_CUR_ADDR_is_0);
+				flash_cur_addr = search_end_of_data(FLASH_MIN_ADDR, FLASH_MAX_ADDR, send_size);
+			}
+			else if(flash_cur_addr<FLASH_MIN_ADDR){
+				sbi(flags,FLASH_CUR_ADDR_less_MIN);
+				flash_cur_addr = search_end_of_data(FLASH_MIN_ADDR, FLASH_MAX_ADDR, send_size);
+			}
+			jdata.flags = flags;
+			PAGE_PROG(flash_cur_addr, (char*)&jdata, send_size);
+			flash_cur_addr+=send_size;
+			if ((FLASH_MAX_ADDR-flash_cur_addr)<send_size){
+				flash_cur_addr = FLASH_MIN_ADDR;
+				sbi(flags, FLASH_CUR_ADDR_is_MIN_ADDR);
+			}
+			READ(flash_cur_addr, spi_buf, send_size);
+			for (int i=0 ; i<send_size ; i++){
+				if (spi_buf[i]!=0xFF) {
+					SECTOR_ER(flash_cur_addr+i);
+				}
+			}
+			flash_cur_addr_L=*((uint16_t*)&flash_cur_addr);
+			flash_cur_addr_H=*((uint16_t*)&flash_cur_addr+1); 
+#endif
+		}
 	}
 
-//
-//	RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
-//	SETMASK(GPIOC->CRH, GPIO_CRH_CNF8|GPIO_CRH_MODE8, 0b0001); 
-//	SETMASK(GPIOC->CRH, GPIO_CRH_CNF9|GPIO_CRH_MODE9, 0b0001); 
-	
 
 /*	RCC->APB1ENR = RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3;
 	TIM2->CR1 = TIM_CR1_CEN;
@@ -240,3 +273,4 @@ uint32_t clock_frequency_measure()
 	return frequency;
 }
 	
+

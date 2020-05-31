@@ -18,7 +18,7 @@ void SPI_initialization()
 	GPIOB->CRH &= ~( (0xF<<4*(12-8)) | (0xF<<4*(13-8)) | (0xF<<4*(14-8)) | (0xF<<4*(15-8)) );
 	GPIOB->CRH |= ( (0b0011<<4*(12-8)) | (0b1011<<4*(13-8)) | (0b0100<<4*(14-8)) | (0b1011<<4*(15-8)) );
 	NSS = bit_band_of(&GPIOB->ODR,12);
-	//NSS = (uint32_t*)( 0x42000000 + ((uint32_t)&(GPIOB->ODR)-0x40000000)*32 + 12*4);
+//#define NSS bit_band_of(&GPIOB->ODR,12) // Alternate bit band pin initialization
 	*NSS=1;
 //	INTERRUPT_ENABLE(35);
 }
@@ -133,13 +133,14 @@ char* RDMDID(char *buf)
 
 void WREN()
 {
+	while(RDSR() & 1);
 	send_cmd(0b00000110);
 	*NSS=1;
 	//spi_buf[0]=0b00000110;
 	//SPI_rw(spi_buf,1,0);
 }
 
-uint8_t RDSR(char *buf)
+uint8_t RDSR()
 {
 	send_cmd(0b00000101);
 	return get_value();
@@ -159,6 +160,7 @@ void WRSR(char value)
 
 char* READ(uint32_t addr, char *buf, uint8_t count)
 {
+	while(RDSR() & 1);
 	send_cmd(0b00000011);
 	send_addr(addr);
 	return get_data(buf, count);
@@ -200,3 +202,30 @@ void CHIP_ER(uint32_t addr)
 	*NSS=1;
 }
 
+/* This function searchs first clear data_size of data in flash array */
+uint32_t search_end_of_data(uint32_t first, uint32_t last, uint32_t data_size) 
+{
+	send_cmd(0b00000011);//READ
+	send_addr(first);
+	while((!(SPI2->SR & SPI_SR_TXE)) || SPI2->SR & (SPI_SR_BSY | SPI_SR_RXNE)) //Clear RX buffer register
+		if (SPI2->DR);
+
+	int count=0;
+	for (int i=first;i<last;i++){
+		if (count == data_size) {
+			count = i-count;
+			break;
+		}
+		SPI2->DR = 0; 
+		while(!(SPI2->SR & SPI_SR_RXNE));
+		if (SPI2->DR == 0xFF) count++;
+		else count=0;
+	}
+	*NSS=1;
+	if (count<FLASH_MIN_ADDR){
+		count = FLASH_MIN_ADDR;
+		sbi(flags, FLASH_CUR_ADDR_is_MIN_ADDR);
+		SECTOR_ER(count);
+	}
+	return count;
+}

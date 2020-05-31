@@ -1,6 +1,6 @@
 TOP=$(CURDIR)
 PROGRAM=main
-FILES=main.c startup.c interrupts.c crontab.c strings.c uart.c spi.c 
+FILES=main.c startup.c interrupts.c crontab.c strings.c uart.c spi.c adc.c dma.c
 LIBDIR=$(TOP)/STM32F10x_StdPeriph_Lib_V3.5.0
 #Adust the following line to the library in use
 STMLIB=$(LIBDIR)/Libraries
@@ -21,7 +21,7 @@ INCLUDE+= -I$(STMLIB)/CMSIS/CM3/DeviceSupport/ST/STM32F10x
 INCLUDE+= -I$(STMLIB)/STM32F10x_StdPeriph_Driver/inc
 INCLUDE+= -I$(STDINCDIR)
 COMMONFLAGS=-O0 -g3 --std=c99 -mcpu=cortex-m3 -mthumb 
-CFLAGS=$(COMMONFLAGS) -Wall $(INCLUDE) 
+CFLAGS=$(COMMONFLAGS) -Wall -Wno-address-of-packed-member $(INCLUDE) 
 #Adust the following line to the type of MCU used
 CFLAGS+=-D STM32F10X_LD
 CFLAGS+=-D USE_STDPERIPH_DRIVER

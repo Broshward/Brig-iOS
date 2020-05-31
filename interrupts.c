@@ -210,10 +210,6 @@ void EXTI15_10_IRQHandler(void)
 }
 void RTCAlarm_IRQHandler(void)
 {
-	add_to_transmit_str("ALR:");
-	add_to_transmit_uint16(RTC->ALRH);
-	add_to_transmit_uint16(RTC->ALRL);
-	add_END_to_transmit();
 	for (uint8_t i=0; i<sizeof(calls)*8; i++)
 		if (calls & (1<<i)){
 			//alarm_action(i);
