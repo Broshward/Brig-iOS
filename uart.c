@@ -40,20 +40,94 @@ void cmd_perform(char *str, uint8_t count) // last byte of string is END.
 		add_to_transmit_data(*(uint8_t**)(str+2),*(uint8_t*)(str+1));
 		add_END_to_transmit();
 	}
-	if (*str==0b1110000) { //  0b1110000  or 'p' for read data (array) without increment addr. Use this for read from peripherial registers for example ADC->DR, PORT, USART registers and etc...
+	if (*str==0b1110000) { //  0b1110000  or 'p' for read 8-bit data (array) without increment addr. Use this for read from peripherial registers for example ADC->DR, PORT, USART registers and etc...
+		str++;
+		uint8_t count=*(uint8_t*)(str);
+		str++;
+		uint8_t *addr=*(uint8_t**)(str);
+		str+=4;
+		for (int i=0 ; i<count ; i++) {
+			add_to_transmit_data(addr,1);
+			// pause ???
+		}
+		add_END_to_transmit();
 	}
+//	if (*str==0b1110001) { //  0b1110001  or 'p'+1(q) for read 16-bit data (array) without increment addr. Use this for read from peripherial registers for example ADC->DR, PORT, USART registers and etc...
+//		str++;
+//		uint8_t count=*(uint8_t*)(str);
+//		str++;
+//		uint8_t *addr=*(uint8_t**)(str);
+//		str+=4;
+//		for (int i=0 ; i<count ; i++)
+//			add_to_transmit_data(*addr,2);
+//		add_END_to_transmit();
+//	}
+//	if (*str==0b1110010) { //  0b1110010  or 'p'+2 (r) for read 32-bit data (array) without increment addr. Use this for read from peripherial registers for example ADC->DR, PORT, USART registers and etc...
+//		str++;
+//		uint8_t count=*(uint8_t*)(str);
+//		str++;
+//		uint8_t *addr=*(uint8_t**)(str);
+//		str+=4;
+//		for (int i=0 ; i<count ; i++)
+//			add_to_transmit_data(*addr,4);
+//		add_END_to_transmit();
+//	}
 	if (*str==0b11100010) { // 0b11100010 or 'b'+128 for write byte
+		**(uint8_t**)(str+1) = *((uint8_t*)(str+5));
 	}
 	if (*str==0b11101000) { // 0b11101000 or 'h'+128 for write half(uint16_t, short)
+		**(uint16_t**)(str+1) = *(uint16_t*)(str+5);
 	}                                           
 	if (*str==0b11110111) { // 0b11110111 or 'w'+128 for write word(uint32_t)
+		**(uint32_t**)(str+1) = *(uint32_t*)(str+5);
 	}                                          
 	if (*str==0b11110011) { // 0b11110011 or 's'+128 for write string
+		str++;
+		uint8_t *addr=*(uint8_t**)(str);
+		str+=4;
+		while(*str!=0){
+			*(addr++)=*(str++);
+		}
+		*(addr)=0; // Terminal symbol
 	}
 	if (*str==0b11100100) { // 0b11100100 or 'd'+128 for write data (array) with increment addr
+		str++;
+		uint8_t count=*(uint8_t*)(str);
+		str++;
+		uint8_t *addr=*(uint8_t**)(str);
+		str+=4;
+		for (int i=0 ; i<count ; i++)
+			*(addr++)=str[i];
 	}
-	if (*str==0b11110000) { // 0b11110000 or 'p'+128 for write data (array) without increment addr. Use this for write to peripherial registers for example DAC->DR, PORT(GPIOx->IDR), USART->DR registers and etc...
+	if (*str==0b11110000) { // 0b11110000 or 'p'+128 for write 8-bit data (array) without increment addr. Use this for write to peripherial registers for example DAC->DR, PORT(GPIOx->IDR), USART->DR registers and etc...
+		str++;
+		uint8_t count=*(uint8_t*)(str);
+		str++;
+		uint8_t *addr=*(uint8_t**)(str);
+		str+=4;
+		for (int i=0 ; i<count ; i++) {
+			*(addr)=str[i]; //*(str++);
+			// pause ???
+		}
 	}
+//	if (*str==0b11110001) { // 0b11110001 or 'p'+128+1 for write 16-bit data (array) without increment addr. Use this for write to peripherial registers for example DAC->DR, PORT(GPIOx->IDR), USART->DR registers and etc...
+//		str++;
+//		uint8_t count=*(uint8_t*)(str);
+//		str++;
+//		uint8_t *addr=*(uint16_t**)(str);
+//		str+=4;
+//		for (int i=0 ; i<count ; i++)
+//			*(addr)=*(((uint16_t*)str)++);
+//	}
+//	if (*str==0b11110010) { // 0b11110010 or 'p'+128+1 for write 32-bit data (array) without increment addr. Use this for write to peripherial registers for example DAC->DR, PORT(GPIOx->IDR), USART->DR registers and etc...
+//		str++;
+//		uint8_t count=*(uint8_t*)(str);
+//		str++;
+//		uint8_t *addr=*(uint32_t**)(str);
+//		str+=4;
+//		for (int i=0 ; i<count ; i++)
+//			*(addr)=*(((uint32_t*)str)++);
+//	}
 	if (*str==0b11100000) { // 0b11100000 for series write and read data to static addr. Use this for write to peripherial register with consequental read from the same register. Useful for interacting with SPI periperal, or write to register with verify writed value.
 	}
 

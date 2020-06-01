@@ -54,19 +54,32 @@ if len(sys.argv)>1:
     if cmd[:3]=='ST:':
         time = int(cmd[3:])
         print time
-        #cmd = 'ST' + chr(time>>24) + chr((time>>16)&0xFF) + chr((time>>8)&0xFF) + chr(time&0xFF)
-        cmd = 'ST' + chr(time&0xFF) + chr((time>>8)&0xFF) + chr((time>>16)&0xFF) + chr(time>>24) 
-    elif cmd[:3] in ("Rd:"):
-        count=int(cmd[3:5],16)
-        print count
-        addr=int(cmd[5:],16)
-        print addr
-        cmd = cmd[:2] + chr(count) + chr(addr&0xFF) + chr((addr>>8)&0xFF) + chr((addr>>16)&0xFF) + chr(addr>>24) 
-        print cmd
-    elif cmd[:2] in ("b:","h:","w:","s:"):
-        addr=int(cmd[2:],16)
+        cmd = 'ST' + "".join([chr((time>>(i*8))&0xFF) for i in range(4)])
+    elif cmd[:3] in ("Rd:","Rp:"):
+        count,addr = cmd[3:].split(',')
+        count=int(count,16)
+        addr=int(addr,16)
+        cmd=cmd[1] + chr(count) + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)])
+    elif cmd[:3] in ("Rb:","Rh:","Rw:","Rs:"):
+        addr=int(cmd[3:],16)
         print 'addr=',addr
-        cmd = cmd[:1] + chr(addr&0xFF) + chr((addr>>8)&0xFF) + chr((addr>>16)&0xFF) + chr(addr>>24) 
+        cmd = cmd[1] + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)])
+    elif cmd[:3] in ("Wb:","Wh:","Ww:"):
+        addr,data = cmd[3:].split('=')
+        addr=int(addr,16)
+        data=int(data,16)
+        cmd=chr(ord(cmd[1])+128) + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)]) + "".join([chr((data>>(i*8))&0xFF) for i in range(4)])
+    elif cmd[:3] in ("Ws:"):
+        addr,string = cmd[3:].split('=')
+        addr=int(addr,16)
+        cmd=chr(ord(cmd[1])+128) + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)]) + string
+    elif cmd[:3] in ("Wd:"):
+        count,addr = cmd[3:].split(',')
+        count=int(count,16)
+        addr,data = addr.split('=')
+        addr=int(addr,16)
+        data=int(data,16)
+        cmd=chr(ord(cmd[1])+128) + chr(count) + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)]) + "".join([chr((data>>(i*8))&0xFF) for i in range(count)])
     #elif cmd[:3] in ("RC"):
     cmd = cmd.replace(END_change,END_change+END_change_change)
     cmd = cmd.replace(END,END_change+END_change)
