@@ -1,4 +1,5 @@
 #define SPI_FLASH // For write journaling to external flash processing
+#define WRIPSISB  // For new compact and fuctional data exchange protocol
 //#define DEBUG		// For send to UART information about alarm time and action number
 
 

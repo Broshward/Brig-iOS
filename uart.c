@@ -19,6 +19,7 @@ uint8_t received=0;
 
 void cmd_perform(char *str, uint8_t count) // last byte of string is END.
 {
+#ifndef WRIPSISB // For deprecated binary commands
 	// Binary commands:
 	if (*str==0b1100010) { //  0b1100010  or 'b' for read byte(uint8_t)
 		add_to_transmit_data(*(uint8_t**)(str+1),1); // LSB first
@@ -168,7 +169,7 @@ void cmd_perform(char *str, uint8_t count) // last byte of string is END.
 //		char* addr=str+sizeof("Wc");
 //		add_to_transmit(*addr);
 //	}
-	
+#endif	
 	// String command:
 	if (!_strncmp(str,"CR",2)){ // Execute crontab compatible string
 		str += 2;
@@ -209,7 +210,7 @@ void cmd_perform(char *str, uint8_t count) // last byte of string is END.
 		}
 	}
 // Special commands
-	if (!_strncmp(str,"RT",sizeof("RT")-1)){ //Read time(system) UTC
+	else if (!_strncmp(str,"RT",sizeof("RT")-1)){ //Read time(system) UTC
 		add_to_transmit_str("TM:");
 		//add_to_transmit_uint16(RTC->CNTH); // MSB first
 		//add_to_transmit_uint16(RTC->CNTL);
@@ -217,12 +218,10 @@ void cmd_perform(char *str, uint8_t count) // last byte of string is END.
 		add_to_transmit_data((uint8_t*)&RTC->CNTH, 2);
 		add_END_to_transmit();
 	}
-	if (!_strncmp(str,"ST",sizeof("ST")-1)){ //Set time(system) UTC
+	else if (!_strncmp(str,"ST",sizeof("ST")-1)){ //Set time(system) UTC
 		const uint8_t base = sizeof("ST")-1;
 		while(!(RTC->CRL & RTC_CRL_RTOFF)); // wait for write are terminated
 		RTC->CRL |= RTC_CRL_CNF;     // unblock write access for PRL, CNT, DIV  register of RTC
-//		RTC->CNTH = ((uint8_t)str[base]<<8) + (uint8_t)str[base+1];
-//		RTC->CNTL = ((uint8_t)str[base+2]<<8)+(uint8_t)str[base+3];
 		RTC->CNTL = *(uint16_t*)(str+base);		
 		RTC->CNTH = *((uint16_t*)(str+base)+1);		
 		TIMEH_of_settime = RTC->CNTH; // Write current time of this setting in BKP registers, MSB
@@ -235,6 +234,85 @@ void cmd_perform(char *str, uint8_t count) // last byte of string is END.
 		RCC->CSR |= 1<<24; //Clear all reset flags
 //		GPIOB->BRR=0xFFFF;
 	}
+#ifdef WRIPSISB
+	else {
+	// WRIPSISB data exchange protocol
+	// W rite
+	// R ead
+	// I ncrement
+	// P ause
+	// S tring
+	// I nteger
+	// S hort
+	// B yte
+	#define WRITE	(cmd & (1<<7))
+	#define READ	(cmd & (1<<6))
+	#define INC		(cmd & (1<<5))
+	#define PAUSE	(cmd & (1<<4))
+	#define STRING	!(cmd & 0b111)
+		uint8_t cmd = *str;
+		uint8_t data_size = cmd & 0b111; // 0 for string, 1 for byte, 2 for short, 4 for int, 5,6,7 - reserved
+		str++;
+		void *addr=*(uint8_t**)(str);
+		str+=4;
+		count -= 5;
+
+		if (data_size==0) { // For string format 
+			count=0xFF;
+			data_size=1;
+		}
+		else if (!WRITE){
+			if (READ) // write command
+				if (count) {
+					count=*(uint8_t*)(str);
+					str++;
+				}
+				else
+					count = data_size;
+			else 
+				return; // Nothing to do. In the future this will be function calling
+		}
+//		for (int i=0 ; i<count ; i++) {
+		while (count>0) {
+			if (WRITE) {
+				switch (data_size) {
+					case 1:
+						*((uint8_t*)addr)=*str;
+					break;
+					case 2:
+						*((uint16_t*)addr)=*((uint16_t*)str);
+					break;
+					case 4:
+						*((uint32_t*)addr)=*((uint32_t*)str);
+					break;
+				}
+				if (STRING)
+					if (!(*str)) break;
+				str+=data_size;
+			}
+			if (PAUSE); // if pause
+			if (READ) {// if read after write
+				if (STRING)
+					if (!(*(uint8_t*)addr)) break;
+				switch (data_size) {
+					case 1:
+						transmit_buf[transmit_queue_index]=*(uint8_t*)addr;
+					break;
+					case 2:
+						*(uint16_t*)(&transmit_buf[transmit_queue_index])=*(uint16_t*)addr;
+					break;
+					case 4:
+						*(uint32_t*)(&transmit_buf[transmit_queue_index])=*(uint32_t*)addr;
+					break;
+				}
+				transmit_queue_index+=data_size;
+			}
+			if (INC) // if increment
+				addr+=data_size;
+			count-=data_size;
+		}
+	}
+#endif
 }
 
 void add_END_to_transmit()
@@ -244,31 +322,32 @@ void add_END_to_transmit()
 
 void add_to_transmit(uint8_t num)
 {
-	switch (num) {
-		case END:
-			transmit_buf[transmit_queue_index++]=END_change;
-			transmit_buf[transmit_queue_index++]=END_change;
-			break;
-		case END_change:
-			transmit_buf[transmit_queue_index++]=END_change;
-			transmit_buf[transmit_queue_index++]=END_change_change;
-			break;
-		default:
-			transmit_buf[transmit_queue_index++]=num;
-			break;
-	}
+	transmit_buf[transmit_queue_index++]=num;
+//	switch (num) {
+//		case END:
+//			transmit_buf[transmit_queue_index++]=END_change;
+//			transmit_buf[transmit_queue_index++]=END_change;
+//			break;
+//		case END_change:
+//			transmit_buf[transmit_queue_index++]=END_change;
+//			transmit_buf[transmit_queue_index++]=END_change_change;
+//			break;
+//		default:
+//			transmit_buf[transmit_queue_index++]=num;
+//			break;
+//	}
 }
 
-void add_to_transmit_uint16(uint16_t num) //deprecated
+void add_to_transmit_uint16(uint16_t num) 
 {
-	add_to_transmit(num>>8);
-	add_to_transmit((uint8_t)num);
+	*(uint16_t*)(&transmit_buf[transmit_queue_index])=num;
+transmit_queue_index+=2;
 }
 
-void add_to_transmit_uint32(uint32_t num) //deprecated
+void add_to_transmit_uint32(uint32_t num)
 {
-	for(uint8_t i=3;i<4;i--)
-		add_to_transmit((uint8_t)(num>>(8*i)));
+	*(uint32_t*)(&transmit_buf[transmit_queue_index])=num;
+transmit_queue_index+=4;
 }
 
 void add_to_transmit_data(uint8_t *data, uint8_t count)
@@ -287,10 +366,28 @@ void add_to_transmit_str(char *str)
 
 void transmit_uart_buffer()
 {
-	if (transmit_queue_index!=transmited) // Transmit UART buffer
+	if (transmited!=transmit_queue_index) // Transmit UART buffer
 		if (USART1->SR & USART_SR_TC){
-			USART1->DR = transmit_buf[transmited];
+			switch (transmit_buf[transmited]) {
+				case END:
+					USART1->DR=END_change;
+					while(!(USART1->SR & USART_SR_TXE)); // while TX DR buffer not empty
+					USART1->DR=END_change;
+					break;
+				case END_change:
+					USART1->DR=END_change;
+					while(!(USART1->SR & USART_SR_TXE)); // while TX DR buffer not empty
+					USART1->DR=END_change_change;
+					break;
+				default:
+					USART1->DR=transmit_buf[transmited];
+					break;
+			}
 			transmited++;
+			if (transmited==transmit_queue_index) {
+				while(!(USART1->SR & USART_SR_TXE)); // while TX DR buffer not empty
+				USART1->DR = END;
+			}
 		}
 }
 
