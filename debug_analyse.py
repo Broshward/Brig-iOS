@@ -48,44 +48,50 @@ if "-i" in sys.argv:
 else:
     interactive=None;
         
+cmds={  "Rb":0b01000001,
+        "Rh":0b01000010,
+        "Rw":0b01000100,
+        "Rs":0b01100000,
+        "Wb":0b10000001,
+        "Wh":0b10000010,
+        "Ww":0b10000100,
+        "Ws":0b10100000,
+        "RWb":0b11000001,
+        "RWh":0b11000010,
+        "RWw":0b11000100,
+        "RWs":0b11100000
+    }
 if len(sys.argv)>1:
     cmd = sys.argv[1]
     print cmd
     if cmd[:3]=='ST:':
+# ST if deprecated, needed for replace =>
+#"CR42050090=1;4000281c=AAAA;40002818=AAAA;42050090=0;"
         time = int(cmd[3:])
         print time
         cmd = 'ST' + "".join([chr((time>>(i*8))&0xFF) for i in range(4)])
-    elif cmd[:3] in ("Rd:","Rp:"):
-        count,addr = cmd[3:].split(',')
-        count=int(count,16)
+    if cmd.split(':')[0] in cmds.keys(): 
+        try:
+            addr,data = cmd.split(':')[1].split('=')
+        except:
+            addr,data = cmd.split(':')[1],None
         addr=int(addr,16)
-        cmd=cmd[1] + chr(count) + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)])
-    elif cmd[:3] in ("Rb:","Rh:","Rw:","Rs:"):
-        addr=int(cmd[3:],16)
-        print 'addr=',addr
-        cmd = cmd[1] + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)])
-    elif cmd[:3] in ("Wb:","Wh:","Ww:"):
-        addr,data = cmd[3:].split('=')
-        addr=int(addr,16)
-        data=int(data,16)
-        cmd=chr(ord(cmd[1])+128) + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)]) + "".join([chr((data>>(i*8))&0xFF) for i in range(4)])
-    elif cmd[:3] in ("Ws:"):
-        addr,string = cmd[3:].split('=')
-        addr=int(addr,16)
-        cmd=chr(ord(cmd[1])+128) + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)]) + string
-    elif cmd[:3] in ("Wd:"):
-        count,addr = cmd[3:].split(',')
-        count=int(count,16)
-        addr,data = addr.split('=')
-        addr=int(addr,16)
-        data=int(data,16)
-        cmd=chr(ord(cmd[1])+128) + chr(count) + "".join([chr((addr>>(i*8))&0xFF) for i in range(4)]) + "".join([chr((data>>(i*8))&0xFF) for i in range(count)])
-    #elif cmd[:3] in ("RC"):
+        addr="".join([chr((addr>>(i*8))&0xFF) for i in range(4)])
+        cmd = cmds[cmd.split(':')[0]]
+        if data:
+            if (cmd & 0b111)!=0:
+                data=int(data,16)
+                data="".join([chr((data>>(i*8))&0xFF) for i in range(cmd & 0b111)])
+        else:
+            data=''
+        cmd = chr(cmd) + addr + data
+            
     cmd = cmd.replace(END_change,END_change+END_change_change)
     cmd = cmd.replace(END,END_change+END_change)
     cmd += END
-    print cmd
-    print [hex(ord(i)) for i in cmd]
+    print "Command:" 
+    print ' ', [hex(ord(i)) for i in cmd]
+    print ' ', [chr(ord(i)) for i in cmd ]
 #    exit()
     port.write(cmd)
 #    exit(0)
@@ -100,7 +106,9 @@ while(1):
     if pack:
         pack = pack.replace(END_change+END_change,END)
         pack = pack.replace(END_change+END_change_change,END_change)
-        print [hex(ord(i)) for i in pack]
+        print "Answer:" 
+        print ' ', [hex(ord(i)) for i in pack]
+        print ' ', [chr(ord(i)) for i in pack]
         result = re.search('(\w+:)(.*)',pack,re.DOTALL)
         if result==None: 
             exit()
