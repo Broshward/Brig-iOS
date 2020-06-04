@@ -48,6 +48,7 @@ if "-i" in sys.argv:
 else:
     interactive=None;
         
+# Example commands: ./debug_analyse.py  Rw:2000080c
 cmds={  "Rb":0b01000001,
         "Rh":0b01000010,
         "Rw":0b01000100,
@@ -56,7 +57,7 @@ cmds={  "Rb":0b01000001,
         "Wh":0b10000010,
         "Ww":0b10000100,
         "Ws":0b10100000,
-        "RWb":0b11000001,
+        "RWb":0b11010001,
         "RWh":0b11000010,
         "RWw":0b11000100,
         "RWs":0b11100000
@@ -65,25 +66,37 @@ if len(sys.argv)>1:
     cmd = sys.argv[1]
     print cmd
     if cmd[:3]=='ST:':
-# ST if deprecated, needed for replace =>
+# ST is deprecated, needed for replace =>
 #"CR42050090=1;4000281c=AAAA;40002818=AAAA;42050090=0;"
         time = int(cmd[3:])
         print time
         cmd = 'ST' + "".join([chr((time>>(i*8))&0xFF) for i in range(4)])
     if cmd.split(':')[0] in cmds.keys(): 
         try:
-            addr,data = cmd.split(':')[1].split('=')
+            cmd,count = cmd.split('*')
         except:
-            addr,data = cmd.split(':')[1],None
+            cmd,count = cmd,None
+        cmd = cmd.split(':')
+        try:
+            addr,data = cmd[1].split('=')
+        except:
+            addr,data = cmd[1],None
+        cmd = cmds[cmd[0]]
         addr=int(addr,16)
         addr="".join([chr((addr>>(i*8))&0xFF) for i in range(4)])
-        cmd = cmds[cmd.split(':')[0]]
         if data:
-            if (cmd & 0b111)!=0:
-                data=int(data,16)
-                data="".join([chr((data>>(i*8))&0xFF) for i in range(cmd & 0b111)])
+            temp=''
+            for j in data.split(','):
+                if (cmd & 0b111)!=0:
+                    temp+=''.join([chr((int(j,16)>>(i*8))&0xFF) for i in range(cmd & 0b111)])
+            data=temp        
+            if count:
+                data*=int(count,16)
         else:
-            data=''
+            if count:
+                data=chr(int(count,16))
+            else:
+                data=''
         cmd = chr(cmd) + addr + data
             
     cmd = cmd.replace(END_change,END_change+END_change_change)
@@ -92,9 +105,8 @@ if len(sys.argv)>1:
     print "Command:" 
     print ' ', [hex(ord(i)) for i in cmd]
     print ' ', [chr(ord(i)) for i in cmd ]
-#    exit()
+   # exit()
     port.write(cmd)
-#    exit(0)
 
 import re
 
@@ -123,36 +135,3 @@ while(1):
         #elif pack.group(1)=='d:':
         if interactive == None:
             exit(0)
-#    while (END in s):
-#        packet += s.split(END,1)[0]
-#        packet=packet.replace(END_change+END_change,END)
-#        packet=packet.replace(END_change+END_change_change,END_change)
-#        #print len(packet)
-#        #for i in packet:
-#        #    print hex(ord(i)),
-#        #print hex(ord(END))
-#        while ('ALR:' in packet):
-#            beg,end=packet.split('ALR:',1)
-#            beg+='ALARM:'
-#            msbyte=((ord(end[0])<<8)+ord(end[1]))
-#            lsbyte=((ord(end[2])<<8)+ord(end[3]))
-#            time=(msbyte<<16)+lsbyte
-#            end=str(time)+' '+end[4:]
-#            packet=beg+end
-#        while ('ACT:' in packet):
-#            beg,end=packet.split('ACT:',1)
-#            beg+='ACTION:'
-#            number=ord(end[0])
-#            end=str(number)+' '+end[1:]
-#            packet=beg+end
-#        print packet
-#        packet = ''
-#        s = s.split(END,1)[1]
-##        for i in packet:
-##            print hex(ord(i)),
-##        print hex(ord(END))
-##        packet = s.split(END)[1]
-#    packet += s
-            
-
-        

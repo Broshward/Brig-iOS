@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+
+./WREN
+sleep 0.1
+./debug_analyse.py RWb:422181b0=0 # NSS pin low
+./debug_analyse.py RWb:4000380C=C7 # Chip ERASE
+./debug_analyse.py RWb:422181b0=1 # NSS pin high
+
+
