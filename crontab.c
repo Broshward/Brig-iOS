@@ -19,10 +19,8 @@ void cron_action(uint8_t number)
 add_to_transmit_str("ALR:");
 add_to_transmit_data((uint8_t*)&RTC->ALRL, 2); // LSB first
 add_to_transmit_data((uint8_t*)&RTC->ALRH, 2);
-add_END_to_transmit();
-add_to_transmit_str("ACT:");
+add_to_transmit_str(" ACT:");
 add_to_transmit(number);
-add_END_to_transmit();
 #endif
 	char *str = strblank(crontab[number],6)+1;
 	uint32_t *dest=0,*src=0,value=0;

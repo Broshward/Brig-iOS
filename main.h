@@ -32,6 +32,8 @@ uint32_t flags;
 #define FLASH_CUR_ADDR_is_MIN_ADDR 5 // probably Flash memory is ended
 #define FLASH_is_ended 6
 #define FLASH_CUR_ADDR_less_MIN 7
+
+#define POWER_OFF 8 // 5V Power is absent
 #define PINRST 31
 #define PORRST 30
 #define STFRST 29

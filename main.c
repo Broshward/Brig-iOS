@@ -53,29 +53,30 @@ int main()
 //	cron_add_tab("* * * * * * 40013804 4000281c\0");
 
 //	Tables for greenhouse: 
-	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4"; // GPIOB->BSRR = 4
+	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4;40010C10=100"; // GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
 	crontab[1] = "0 1 5,7-19,21 * * * 40010C14 V4"; // GPIOB->BRR = 4
-	crontab[2] = "0 30 10-16 * * * 40010C10 V4";	// GPIOB->BSRR = 4
-	crontab[3] = "0 31 10-16 * * * 40010C14 V4";	// GPIOB->BRR = 4
-	crontab[4] = "1 1 5,7-19,21 * * * 40010C10 V10";// GPIOB->BSRR = 0x10
-	crontab[5] = "1 2 5,7-19,21 * * * 40010C14 V10";// GPIOB->BRR = 0x10
+	crontab[2] = "1 1 5,7-19,21 * * * 40010C10 V10";// GPIOB->BSRR = 0x10
+	crontab[3] = "1 2 5,7-19,21 * * * 40010C14 V10,40010C14=100";// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
+	crontab[4] = "0 30 10-16 * * * 40010C10 V4;40010C10=100";	// GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
+	crontab[5] = "0 31 10-16 * * * 40010C14 V4";	// GPIOB->BRR = 4
 	crontab[6] = "1 31 10-16 * * * 40010C10 V10";	// GPIOB->BSRR = 0x10
-	crontab[7] = "1 32 10-16 * * * 40010C14 V10";	// GPIOB->BRR = 0x10
+	crontab[7] = "1 32 10-16 * * * 40010C14 V10,40010C14=100";	// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
 	crontab[8] = "*/15 * * * * * 40003000 VAAAA";	// IWDG->KR = 0xAAAA
-//	crontab[9] = "5 * * * * * 42248100=1"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
+	crontab[9] = "5 * * * * * 42248100=1"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
 
 //	Test and tuning example
-//	crontab[9] = "*/4 * * * * * 40010C10=10";
-//	crontab[10] = "1-59/4 * * * * * 40010C14=10";
-//	crontab[11] = "2-59/4 * * * * * 40010C10=4";
-//	crontab[12] = "3-59/4 * * * * * 40010C14=4";
-//	crontab[13] = "*/2 * * * * * 20000F00=AAAA";
+//	crontab[9] = "*/5 * * * * * 40010810=8000";		// GPIOA->BSRR=1<<15
+//	crontab[10] = "1-59/5 * * * * * 40010C10=10";	
+//	crontab[11] = "2-59/5 * * * * * 40010C14=10";
+//	crontab[12] = "3-59/5 * * * * * 40010C10=4";
+//	crontab[13] = "4-59/5 * * * * * 40010C14=4,40010814=8000";
+//	crontab[14] = "*/2 * * * * * 20000F00=AAAA";
 
 	RCC->CSR |= RCC_CSR_LSION;
 	while(!(RCC->CSR & RCC_CSR_LSIRDY));
-//	IWDG->KR = 0xCCCC;
-//	IWDG->KR = 0x5555;
-//	IWDG->PR = 0b111;
+	IWDG->KR = 0xCCCC;
+	IWDG->KR = 0x5555;
+	IWDG->PR = 0b111;
 	//DBGMCU->CR |= DBGMCU_IWDG_STOP;
 
 RCC->APB2ENR |= RCC_APB2Periph_AFIO;
@@ -86,8 +87,8 @@ RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 	GPIOB->CRL |= (0b0001 << 2*4) | (0b0001 << 4*4) | (0b0001 << 5*4); //GPIOB 2,4 - output for relay control
 	GPIOB->ODR = 0; // For reset pullup of GPIOB 4 pin
 
-	GPIOB->CRH &= ~((0b1111 << 0*4) | (0b1111 << 1*4));//GPIOB 8 - output for 5->12 Volt DC-DC, GPIOB 9 - input with pulldown for DC-DC feedback
-	GPIOB->CRH |= (0b0001 << 0*4) | (0b1000 << 1*4);//GPIOB 8 - output for 5->12 Volt DC-DC, GPIOB 9 - input with pulldown for DC-DC feedback
+	GPIOB->CRH &= ~((0b1111 << 0*4));//GPIOB 8 - on/off for 5->12 Volt step-up
+	GPIOB->CRH |= (0b0001 << 0*4);//GPIOB 8 - on/off for 5->12 Volt step-up
 
 // Errors and reset flags detects	
 	if (RCC->CSR & (RCC_CSR_PINRSTF))
@@ -114,6 +115,8 @@ RCC->APB2ENR |= RCC_APB2Periph_GPIOD;
 	GPIOD->CRL &= ~((0b1111 << 0*4) | (0b1111 << 1*4)); //GPIOD 0,1 - output
 	GPIOD->CRL |= (0b0001 << 0*4) | (0b0001 << 1*4); //GPIOD 0,1 - output
 
+RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
+
 sys_clock=clock_frequency_measure();
 RCC->APB2ENR |= RCC_APB2Periph_USART1; //Включение тактовой USART 
 UART_initialization(9600);
@@ -125,21 +128,22 @@ ADC_init();
 
 	set_alarm(next_alarm());
 
-	while(1){
-	//	WRSR(2);
-	//	RDSR(spi_buf);
-	//	WRSR(0);
-	//	RDSR(spi_buf);
-	//	READ(0x123456,spi_buf,255);
-	//	SECTOR_ER(0x123456);
-	//	READ(0x123456,spi_buf,255);
-	//	READ(0x123456-256,spi_buf,255);
-	//	PAGE_PROG(0x123456, "Hello world", _strlen("Hello world"));
-	//	READ(0x123456,spi_buf,255);
+//	WRSR(2);
+//	RDSR(spi_buf);
+//	WRSR(0);
+//	spi_buf[0]=RDSR();
+//	READ(0,spi_buf,255);
+//	SECTOR_ER(0);
+//	READ(0,spi_buf,255);
+//	READ(0,spi_buf,255);
+//	READ(4096,spi_buf,255);
+//	PAGE_PROG(0x123456, "Hello world", _strlen("Hello world"));
+//	READ(0x123456,spi_buf,255);
 
-	//	DR_tx=0x55; // For Software SPI first test
-	//	_SPI_rw(); // For Software SPI first test
-	//	SPI_rw(0x56); // For Software SPI first test
+//	DR_tx=0x55; // For Software SPI first test
+//	_SPI_rw(); // For Software SPI first test
+//	SPI_rw(0x56); // For Software SPI first test
+	while(1){
 		transmit_uart_buffer();
 		recieve_uart_buffer();
 		if (RTC->CNTH!=0){				// pseudo protection from unexpected zeroing RTC. (RTC->CNT == 0)
@@ -161,14 +165,6 @@ ADC_init();
 			RTC->ALRL = (uint16_t)recent_alarm+1;
 			RTC->CRL &= ~RTC_CRL_CNF;//  for write protect PRL, CNT, DIV
 		}
-		if (bit_is_set(GPIOB->ODR,8)) // Signal generator for 5V->12V DC-DC 
-				sbi(GPIOB->BRR,8);
-		else
-			if (bit_is_clear(GPIOB->IDR,9)){ // If output of DC-DC <12V
-				sbi(GPIOB->BSRR,8);
-//				for (int i=0;i<3;i++);
-//				sbi(GPIOB->BRR,8);
-			}
 		if (DMA1->ISR &	DMA1_FLAG_TC1){
 			DMA1->IFCR=0xF; //Clear DMA flags
 			uint16_t *channels=jdata.ADC_channels; 
@@ -186,7 +182,12 @@ ADC_init();
 				//	GPIOx->BRR = 1<<y;
 				//}
 			}
+			if (GPIOC->IDR & (1<<13))
+				sbi(flags,POWER_OFF);
+			else
+				cbi(flags,POWER_OFF);
 #ifdef SPI_FLASH
+			if (*NSS==0) continue; // SPI is busy 
 			uint8_t send_size=sizeof(jdata);
 			((uint16_t*)&jdata)[1] = RTC->CNTH;
 			((uint16_t*)&jdata)[0] = RTC->CNTL;
