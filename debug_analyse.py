@@ -42,6 +42,12 @@ if "-bt05" in sys.argv:
             print SCAN
             exit(1)
 
+if "-g" in sys.argv:
+    debug=1;
+    sys.argv.remove("-g")
+else:
+    debug=None;
+        
 if "-i" in sys.argv:
     interactive=1;
     sys.argv.remove("-i")
@@ -49,9 +55,9 @@ else:
     interactive=None;
         
 # Example commands: ./debug_analyse.py  Rw:2000080c
-cmds={  "Rb":0b01000001,
-        "Rh":0b01000010,
-        "Rw":0b01000100,
+cmds={  "Rb":0b01100001,
+        "Rh":0b01100010,
+        "Rw":0b01100100,
         "Rs":0b01100000,
         "Wb":0b10000001,
         "Wh":0b10000010,
@@ -64,7 +70,7 @@ cmds={  "Rb":0b01000001,
     }
 if len(sys.argv)>1:
     cmd = sys.argv[1]
-    print cmd
+#    print cmd
     if cmd[:3]=='ST:':
 # ST is deprecated, needed for replace =>
 #"CR42050090=1;4000281c=AAAA;40002818=AAAA;42050090=0;"
@@ -102,14 +108,21 @@ if len(sys.argv)>1:
     cmd = cmd.replace(END_change,END_change+END_change_change)
     cmd = cmd.replace(END,END_change+END_change)
     cmd += END
-    print "Command:" 
-    print ' ', [hex(ord(i)) for i in cmd]
-    print ' ', [chr(ord(i)) for i in cmd ]
-   # exit()
+    if debug:
+        print "Command:" 
+        print ' ', [hex(ord(i)) for i in cmd]
+        print ' ', [chr(ord(i)) for i in cmd ]
+#    exit()
     port.write(cmd)
+
+
+if not (ord(cmd[0]) & (1<<6)): # Command without read
+    exit(0)
+
 
 import re
 
+data_width = ord(cmd[0]) & 0b111
 packet=''
 s=''
 while(1):
@@ -118,9 +131,22 @@ while(1):
     if pack:
         pack = pack.replace(END_change+END_change,END)
         pack = pack.replace(END_change+END_change_change,END_change)
-        print "Answer:" 
-        print ' ', [hex(ord(i)) for i in pack]
-        print ' ', [chr(ord(i)) for i in pack]
+        if debug:
+            print "Answer:" 
+            print ' ', [hex(ord(i)) for i in pack] #Raw hex data
+            print ' ', [chr(ord(i)) for i in pack] #Raw char data
+        if data_width==0: # String data
+            print ' ', ''.join([chr(ord(i)) for i in pack]) 
+        else:
+            res=0
+            for i in [pack[i:i+data_width] for i in range(0,len(pack),data_width)]:
+                print sum([ord(i[j])<<8*j for j in range(data_width)])
+#                res+=ord(pack[i])<<(8*(i % data_width))
+#                print res
+#                if i%data_width==0:
+#                    print res
+#                    res=0
+        exit(0)
         result = re.search('(\w+:)(.*)',pack,re.DOTALL)
         if result==None: 
             exit()

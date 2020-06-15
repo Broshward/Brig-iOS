@@ -267,7 +267,8 @@ void cmd_perform(char *str, uint16_t count) // last byte of string is END.
 					count=*(uint8_t*)(str);
 					str++;
 				}
-				count = (count+1) * data_size; // if count==0 then this is ONE operation with data!!!
+				else count++;
+				count = (count) * data_size; // if count==0 then this is ONE operation with data!!!
 			}
 			else 
 				return; // Nothing to do. In the future this will be function calling

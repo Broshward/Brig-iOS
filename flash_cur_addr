@@ -1,8 +1,13 @@
-#!/usr/bin/bash
+#!/usr/bin/python2
+#coding:utf8
 
-addr=$1
+def flags_parce(flags):
+    return    
 
-./debug_analyse.py RWb:40006c0c=${addr:0:4}
-./debug_analyse.py RWb:40006c10=${addr:4:4}
+import os
 
+flash_cur_addr_H = 0x40006c0c
+flash_cur_addr_L = 0x40006c10
+flash_cur_addr = (int(os.popen('./debug_analyse.py Rh:%x' %(flash_cur_addr_H)).read())<<8) + int(os.popen('./debug_analyse.py Rh:%x' %(flash_cur_addr_L)).read())
 
+print 'Current external flash address for write is: ', flash_cur_addr
