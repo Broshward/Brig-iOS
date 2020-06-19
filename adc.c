@@ -16,7 +16,8 @@ RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 	ADC1->SQR1 = (12-1)<<20; // -1 because 0 is a One (1) conversion
 	ADC1->SQR3 = 0 | 1<<5*1 | 2<<5*2 | 3<<5*3 | 4<<5*4 | 5<<5*5;
 	ADC1->SQR2 = 6 | 7<<5*1 | 8<<5*2 | 9<<5*3 | 16<<5*4 | 17<<5*5;
-	ADC1->SMPR1 = 0b010<<3*8 | 0b010;
+	ADC1->SMPR1 = (0b010<<3*8) | 0b010;
+	//ADC1->SMPR2 = 0b00010010010010010010010010010010;
 	ADC1->SMPR2 = 0b00010010010010010010010010010010;
 
 	RCC->CFGR |= RCC_CFGR_ADCPRE; // ADC clock divider /8

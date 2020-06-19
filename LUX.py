@@ -3,8 +3,6 @@
 
 import sys,math
 def Lux(R,R0,E0,T):
-#    R_inf = R0*math.e**(-beta/T0)
-#    T = beta/(math.log(R/R_inf))
     R=float(R)
     R0=float(R0)
     T=float(T)

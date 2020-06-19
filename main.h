@@ -23,7 +23,7 @@ uint16_t ADC_average[12];
 #define flash_cur_addr_L BKP->DR4 
 
 uint32_t flags;
-
+// Number of bit accorded certainf flag in flags register
 #define HARD_FAULT 0
 #define TIME_CLEAR 1
 #define CHANNEL1_IS_SET 2

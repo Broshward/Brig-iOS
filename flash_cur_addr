@@ -1,13 +1,21 @@
 #!/usr/bin/python2
 #coding:utf8
 
-def flags_parce(flags):
-    return    
-
-import os
+import sys
+from interact import *
+interact=interact()
 
 flash_cur_addr_H = 0x40006c0c
 flash_cur_addr_L = 0x40006c10
-flash_cur_addr = (int(os.popen('./debug_analyse.py Rh:%x' %(flash_cur_addr_H)).read())<<8) + int(os.popen('./debug_analyse.py Rh:%x' %(flash_cur_addr_L)).read())
 
-print 'Current external flash address for write is: ', flash_cur_addr
+if len(sys.argv)>1:
+    addr=int(sys.argv[1])
+    cmd = "Wh:%x=%x" %(flash_cur_addr_H,(addr>>16)&0xFFFF)
+    print 'Cmd ',cmd
+    interact.interact(cmd)
+    cmd = "Wh:%x=%x" %(flash_cur_addr_L,addr & 0xFFFF)
+    print 'Cmd ',cmd
+    interact.interact(cmd)
+else:
+    flash_cur_addr = (int(interact.interact("Rh:%x" %(flash_cur_addr_H)))<<16) + int(interact.interact('Rh:%x' %(flash_cur_addr_L)))
+    print 'Current external flash address for write is: ', flash_cur_addr

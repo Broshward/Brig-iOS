@@ -33,17 +33,17 @@ def ADC_illustrate(channels, ADCs):
         ADC=int(ADCs[i])
         if 'reserved' in channels[i][0]: continue
         elif i==10:
-            print '%-50s' %(channels[i][0])+': ', 1.2*4095/ADC
+            print '%-60s' %(channels[i][0])+': %.4f' %(1.2*4095/ADC)
         elif i==11 :
-            print '%-50s' %(channels[i][0])+': ', ADC
+            print '%-60s' %(channels[i][0])+': ', ADC
         elif 'Luminosity' in channels[i][0]:
             current_resistance = ADC*R_pullup/(ADC_max-ADC_min-ADC)
-            current_luminosity = Lux(current_resistance,channels[i]['T'],channels[i]['E1'],channels[i]["Re1"])
-            print '%-50s' %(channels[i][0])+': ',current_luminosity
+            current_luminosity = Lux(current_resistance,channels[i]['Re1'],channels[i]['E1'],channels[i]["T"])
+            print '%-60s' %(channels[i][0])+': %.2f' %(current_luminosity)
         elif 'temperature' in channels[i][0]:
             current_resistance = ADC*R_pullup/(ADC_max-ADC_min-ADC)
             current_temperature = Temp(current_resistance,channels[i]['B'],channels[i]['R'],channels[i]["T"]+273.15)
-            print '%-60s' %(channels[i][0])+': ',current_temperature-273.15
+            print '%-60s' %(channels[i][0])+': %.2f' %(current_temperature-273.15)
             
     return
     
@@ -65,7 +65,7 @@ print 'Average values 0...11: ', ADC_values.split()
 ADC_illustrate(ADC_channels, ADC_values.split()[:12])
 
 
-flags =  int(os.popen('./debug_analyse.py Rw:%x' %(jdata_base+4+12)).read())
+flags =  int(os.popen('./debug_analyse.py Rw:%x' %(jdata_base+4+12*2)).read())
 print 'Flags: {:032b}'.format(flags)
 
 
