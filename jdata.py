@@ -3,10 +3,10 @@
 
 ADC_channels=[
 {0:"(ADC_IN0)   Luminosity", "T":0.525, 'E1':237, "Re1":2370},
-{0:"(ADC_IN1)   Nutrien solution temperature, Bottom, INPUT",  "B":3337, "R":9550, "T":25},
-{0:"(ADC_IN2)   Nutrien solution temperature, Bottom, OUTPUT",  "B":3353.5, "R":9609, "T":25},
-{0:"(ADC_IN3)   Nutrien solution temperature, Top, OUTPUT",  "B":3357.6, "R":9596.8, "T":25},
-{0:"(ADC_IN4)   Nutrien solution temperature, Top, INPUT",  "B":3364, "R":9469, "T":25},
+{0:"(ADC_IN1)   Back Right Bottom temperature",  "B":3337, "R":9550, "T":25},
+{0:"(ADC_IN2)   Back Center Bottom temperature",  "B":3353.5, "R":9609, "T":25},
+{0:"(ADC_IN3)   Back Center Top temperature",  "B":3357.6, "R":9596.8, "T":25},
+{0:"(ADC_IN4)   Back Right Top temperature",  "B":3364, "R":9469, "T":25},
 {0:"(ADC_IN5)   Center  center  bottom temperature", "B":3377.5, "R":9502.7, "T":25},
 {0:"(ADC_IN6)   Center  center  Top temperature", "B":3362, "R":9405, "T":25},
 {0:"(ADC_IN7)   Front   right   bottom temperature", "B":3356, "R":9530, "T":25},
@@ -39,7 +39,7 @@ def ADC_illustrate(channels, ADCs):
         elif 'Luminosity' in channels[i][0]:
             current_resistance = ADC*R_pullup/(ADC_max-ADC_min-ADC)
             current_luminosity = Lux(current_resistance,channels[i]['Re1'],channels[i]['E1'],channels[i]["T"])
-            print '%-60s' %(channels[i][0])+': %.2f' %(current_luminosity)
+            print '%-60s' %(channels[i][0])+': %.4f' %(current_luminosity)
         elif 'temperature' in channels[i][0]:
             current_resistance = ADC*R_pullup/(ADC_max-ADC_min-ADC)
             current_temperature = Temp(current_resistance,channels[i]['B'],channels[i]['R'],channels[i]["T"]+273.15)
@@ -48,24 +48,27 @@ def ADC_illustrate(channels, ADCs):
     return
     
 import os
+from interact import *
+interact=interact()
 
 jdata_base = int(os.popen('readelf -s main.elf |grep jdata').read().strip().split()[1], 16)
 
-time_stamp = int(os.popen('./debug_analyse.py Rw:%x' %(jdata_base)).read())
+time_stamp = interact.interact("Rw:%x" %(jdata_base))#int(os.popen('./debug_analyse.py Rw:%x' %(jdata_base)).read())
+
 date = os.popen('date -d @%s' %(time_stamp)).read()
 print 'Date: %s' %(date)
 
-ADC_values = os.popen('./debug_analyse.py Rh:%x*%x' %(jdata_base+4,12)).read()
+ADC_values = interact.interact("Rh:%x*%x" %(jdata_base+4,12))#os.popen('./debug_analyse.py Rh:%x*%x' %(jdata_base+4,12)).read()
 print 'ADC channels 0...11: ', ADC_values.split()
 ADC_illustrate(ADC_channels, ADC_values.split()[:12])
 print
 average = int(os.popen('readelf -s main.elf |grep ADC_average').read().strip().split()[1], 16)
-ADC_values = os.popen('./debug_analyse.py Rh:%x*%x' %(average,12)).read()
+ADC_values = interact.interact("Rh:%x*%x" %(average,12))#os.popen('./debug_analyse.py Rh:%x*%x' %(average,12)).read()
 print 'Average values 0...11: ', ADC_values.split()
 ADC_illustrate(ADC_channels, ADC_values.split()[:12])
 
 
-flags =  int(os.popen('./debug_analyse.py Rw:%x' %(jdata_base+4+12*2)).read())
+flags =  interact.interact("Rh:%x*%x" %(jdata_base+4+12*2))#int(os.popen('./debug_analyse.py Rw:%x' %(jdata_base+4+12*2)).read())
 print 'Flags: {:032b}'.format(flags)
 
 
