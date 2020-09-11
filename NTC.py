@@ -43,10 +43,12 @@ if __name__ == '__main__':
         T2=float(T2)
         calc(R1,T1,R2,T2)
     else:
+        if len(sys.argv)>4:
+            T0 = float(sys.argv[4])
         if len(sys.argv)>3:
             beta = float(sys.argv[3])
         if len(sys.argv)>2:
             R0 = float(sys.argv[2])
         R = float(sys.argv[1])
-        T = Temp(R,beta,R0)
+        T = Temp(R,beta,R0,T0)
         print T-273.15
