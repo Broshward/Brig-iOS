@@ -68,7 +68,7 @@ print 'Average values 0...11: ', ADC_values.split()
 ADC_illustrate(ADC_channels, ADC_values.split()[:12])
 
 
-flags =  interact.interact("Rh:%x*%x" %(jdata_base+4+12*2))#int(os.popen('./debug_analyse.py Rw:%x' %(jdata_base+4+12*2)).read())
+flags = int(interact.interact("Rw:%x" %(jdata_base+4+12*2)))#int(os.popen('./debug_analyse.py Rw:%x' %(jdata_base+4+12*2)).read())
 print 'Flags: {:032b}'.format(flags)
 
 
