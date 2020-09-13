@@ -15,11 +15,13 @@ cmds={  "Rb":0b01100001,
         "RWs":0b11100000
     }
 
+TIMEOUT=2 # Timeout for recieve data
+
 END = chr(0)
 END_change = chr(0xFD)
 END_change_change = chr(0xFC)
 
-import serial 
+import serial, time 
 
 class interact:
 
@@ -84,6 +86,7 @@ class interact:
     def recieve_ans(self):
         s=''
         data=''
+        TIME=time.time()
         while(1):
             s += self.port.readall()
             pack,s=s.split(END,1) if END in s else (None,s)
@@ -101,6 +104,8 @@ class interact:
                     for i in [pack[i:i+self.data_width] for i in range(0,len(pack),self.data_width)]:
                         data += str(sum([ord(i[j])<<8*j for j in range(self.data_width)]))+' '
                 return data
+            if time.time()-TIME>TIMEOUT:
+                return ''
 
     def interact(self,cmd):
         cmd=self.cmd_gen(cmd)

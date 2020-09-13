@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 #coding:utf8
 
-packet_size=128 # Count of byte readable from flash at one time
+packet_size=250 # Count of byte readable from flash at one time
 
 import sys,os,time
 
@@ -20,6 +20,7 @@ if len(sys.argv)<2:
     addr=0
 else:
     addr = int(sys.argv[1])
+    count-=addr
 
 from interact import *
 interact=interact()
@@ -34,15 +35,20 @@ print interact.interact("RWb:4000380C=%s" %(hex((addr>>16)&0xFF)[2:])) # MSB of 
 print interact.interact("RWb:4000380C=%s" %(hex((addr>>8)&0xFF)[2:])) # Second byte of addr
 print interact.interact("RWb:4000380C=%s" %(hex(addr&0xFF)[2:])) # LSB byte of addr
 while(count>0):
-    if count>packet_size:
-        data = interact.interact("RWb:4000380C=0*%s" %(packet_size))
-        count-=packet_size
-        addr+=packet_size
-    else:
-        data = interact.interact("RWb:4000380C=0*%s" %(count))
-        addr+=count
-        count=0
     print 'Lost bytes reading - ',count, ', Addr current is ',addr
-    f.write(data)
-    f.flush()
+    if count>packet_size:
+        data = interact.interact("RWb:4000380C=0*%s" %(hex(packet_size)))
+        data_len=len(data.split())
+        if data_len!=packet_size:continue
+        count-=data_len
+        addr+=data_len
+    else:
+        data = interact.interact("RWb:4000380C=0*%s" %(hex(count)))
+        data_len=len(data.split())
+        if data_len!=count:continue
+        count-=data_len
+        addr+=data_len
+    if data!='':
+        f.write(data)
+        f.flush()
 print interact.interact("RWb:422181b0=1") # NSS pin high
