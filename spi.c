@@ -3,6 +3,9 @@
 #include "strings.h"
 #include "stm32f10x.h"
 
+uint32_t *NSS; // Bit banding address for NSS pin
+char spi_buf[256];
+
 void SPI_initialization()
 {
 	RCC->APB1ENR |= RCC_APB1Periph_SPI2;  

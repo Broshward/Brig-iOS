@@ -49,10 +49,11 @@ else:
         
 # Example commands: ./debug_analyse.py  Rw:2000080c
 if len(sys.argv)>1:
-    cmd = interact.cmd_gen(sys.argv[1])
-    interact.transmit_cmd(cmd)
-
-if not interact.R: # Command without read
-    exit(0)
-
-print interact.recieve_ans()
+    print interact.interact(sys.argv[1])
+#    cmd = interact.cmd_gen(sys.argv[1])
+#    interact.transmit_cmd(cmd)
+#
+#if not interact.R: # Command without read
+#    exit(0)
+#
+#print interact.recieve_ans()

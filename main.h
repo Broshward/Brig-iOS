@@ -1,4 +1,4 @@
-#define SPI_FLASH // For write journaling to external flash processing
+//#define SPI_FLASH // For write journaling to external flash processing
 #define WRIPSISB  // For new compact and fuctional data exchange protocol
 //#define DEBUG		// For send to UART information about alarm time and action number
 
@@ -6,23 +6,24 @@
 #include "stm32f10x.h"
 #include "core_cm3.h"
 
-uint32_t sys_clock;
-uint32_t temperature;
-
-struct JOURNALING_DATA {
+typedef struct  {
 	uint32_t time __attribute__ ((__packed__)); //(( aligned(8) ))
 	uint16_t ADC_channels[12] __attribute__ ((__packed__));
 	uint32_t flags __attribute__ ((__packed__));
 	const char end;
-} jdata; // Data for journaling in external flash
-uint16_t ADC_average[12];
+} JOURNALING_DATA; // Data for journaling in external flash
+
+extern uint32_t sys_clock;
+extern uint32_t temperature;
+extern uint32_t flags;
+extern uint16_t ADC_average[12];
+extern JOURNALING_DATA jdata;
 
 #define TIMEH_of_settime BKP->DR1 // Time of last setting time MSB
 #define TIMEL_of_settime BKP->DR2 // LSB
 #define flash_cur_addr_H BKP->DR3 
 #define flash_cur_addr_L BKP->DR4 
 
-uint32_t flags;
 // Number of bit accorded certainf flag in flags register
 #define HARD_FAULT 0
 #define TIME_CLEAR 1
@@ -110,4 +111,46 @@ uint32_t flags;
 #define INTERRUPT_GENERATE(vec_num) sbi(NVIC->ISPR[vec_num / 32],vec_num % 32)
 #define INTERRUPT_CANCEL(vec_num) sbi(NVIC->ICPR[vec_num / 32],vec_num % 32)
 
+//GPIO
+// Pinout confs:
 
+#define ANALOG 0b0000
+#define FLOATING_INP 0b0100 // Reset state
+#define PULLUPDOWN_INP 0b1000
+#define OD			0b0100
+#define AFIO_PP 	0b1000
+#define AFIO_OD 	0b1100
+#define OUT_10MHZ	0b0001
+#define OUT_2MHZ	0b0010
+#define OUT_50MHZ	0b0011
+
+
+#define GPIO_conf(GPIO,num,CONF) \
+	*((uint32_t*)GPIO+num/8) &= ~(0b1111 << (num%8)*4); \
+	*((uint32_t*)GPIO+num/8) |= ((CONF) << (num%8)*4);
+
+/*#define GPIO_confs(GPIO,...,CONF) \
+//	for (int i=0; i<)
+//	*((uint32_t*)GPIO+num/8) &= ~(0b1111 << (num%8)*4); \
+	*((uint32_t*)GPIO+num/8) |= ((CONF) << (num%8)*4);
+*/
+
+//#define 
+#define Timer_PWM_CenterAligned_for_BRIDGE_DCDC_channel34(TIM) \
+	TIM->CR1 =  TIM_CR1_ARPE | TIM_CR1_CEN; \
+	SETMASK(TIM->CR1,TIM_CR1_CMS,0b11);\
+	TIM->CCMR2 = (0b110<<4) | (0b110<<12) | TIM_CCMR2_OC3PE | TIM_CCMR2_OC4PE;\
+	TIM->CCER = TIM_CCER_CC4E | TIM_CCER_CC4P | TIM_CCER_CC3E ;\
+	TIM->ARR = 100;\
+	TIM->CCR3 = 1;\
+	TIM->CCR4 = 99;\
+	TIM->BDTR = TIM_BDTR_MOE;
+
+#define Timer_fastPWM_ch1(TIM) \
+	TIM->CR1 =  TIM_CR1_ARPE | TIM_CR1_CEN; \
+	TIM->ARR = 100;\
+	TIM->CCR1 = 10;\
+	TIM->BDTR = TIM_BDTR_MOE;
+/*	TIM->CCMR1 = (0b110<<4)  | TIM_CCMR1_OC1PE;\
+	TIM->CCER =  TIM_CCER_CC1E ;\*/
+//void PWM_halfbridge_conf(TIM_TypeDef *TIM,)

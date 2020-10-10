@@ -11,7 +11,6 @@ uint16_t transmit_queue_index=0;
 uint16_t transmited=0;
 //-------------------------------------
 uint8_t receive_buf[256];
-uint8_t received=0;
 
 //----- Byte staffing protocol------------------
 #define END 0
@@ -178,15 +177,14 @@ void cmd_perform(char *str, uint16_t count) // last byte of string is END.
 		str += 2;
 		uint32_t *dest=0,*src=0,value=0;
 		while(*(str-1)!='\0'){
-			if (!dest) dest = (uint32_t*)hex_num_parse(&str);
+			value = hex_num_parse(&str);
 			switch (*str++) { // For old string format
-				case '*':
 				case 'S':
+				case '*':
 					src = (uint32_t*)hex_num_parse(&str);
-				break;
 				case '=':
 				case 'V':
-					value = hex_num_parse(&str);
+					dest = (uint32_t*)value;
 				break;
 				case 'F':
 					// Add function calling at given address
@@ -380,12 +378,14 @@ void transmit_uart_buffer()
 
 void recieve_uart_buffer()
 {
-	//static uint8_t last_index;
+	static uint8_t received=0;
+//	static uint8_t* begin_package=receive_buf;
 	if (USART1->SR & USART_SR_RXNE){ // Recieve UART character to recieve buffer
 		receive_buf[received] = USART1->DR;
+//USART1->DR=receive_buf[received];
 		if (receive_buf[received] == END){
 			cmd_perform((char *)receive_buf,received);
-			received = 0;
+			received=0;
 		}
 		else if ((receive_buf[received] == END_change) && (receive_buf[received-1] == END_change))
 			receive_buf[received-1] = END;

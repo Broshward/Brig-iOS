@@ -9,16 +9,21 @@
 //#include "stdlib.h"
 //#include <string.h>
 
-uint32_t clock_frequency_measure();
+uint32_t flags;
+uint32_t sys_clock;
+uint32_t temperature;
+JOURNALING_DATA jdata;
+uint16_t ADC_average[12];
 
 const uint32_t sys_time = 1533128400; // Birthtime of BrigðiOS. Historical remains :-))
 uint32_t *test_value=(uint32_t*)0x2000080C;
 
 uint32_t recent_time, recent_alarm;
 
+uint32_t clock_frequency_measure();
+
 int main()
 {
-*test_value=0x12345678;
     RCC->APB1ENR |= RCC_APB1Periph_BKP | RCC_APB1Periph_PWR;
 	PWR->CR |= PWR_CR_DBP; //Unblock RTC & BKP register for write access
 	RCC->BDCR |= RCC_BDCR_RTCSEL_LSE | RCC_BDCR_RTCEN | RCC_BDCR_LSEON; //
@@ -37,32 +42,9 @@ int main()
 	INTERRUPT_ENABLE(41);//Enable ALARM RTC interrupt in NVIC
 	EXTI->IMR |= 1<<17; // RTC_ALARM interrupt enable
 	EXTI->RTSR|= 1<<17; // RTC_ALARM rising edge
-//	String for parser test:
-//	cron_add_tab("0 15-20,30,40 1-15/3,*/20,30-35 * * * 200015e1,20000002,20000003,20000004 20000005,20000006 V1,2\0");
-//	Tables for tests:
-//	cron_add_tab("0,10,20,30,40,50 * * * * * 40011010 V100\0");
-//	cron_add_tab("5,15,25,35,45,55 * * * * * 40011014 V100\0");
-//	cron_add_tab("2,12,22,32,42,52 * * * * * 40011010 V200\0");
-//	cron_add_tab("3,13,23,33,43,53 * * * * * 40011014 V200\0");
-//	cron_add_tab("*/6 * * * * * 40013804 V35\0");
-//	cron_add_tab("1-60/6 * * * * * 40013804 V36\0");
-//	cron_add_tab("2-60/6 * * * * * 40013804 V37\0");
-//	cron_add_tab("3-60/6 * * * * * 40013804 V38\0");
-//	cron_add_tab("4-60/6 * * * * * 40013804 V39\0");
-//	cron_add_tab("5-60/6 * * * * * 40013804 V40\0");
-//	cron_add_tab("* * * * * * 40013804 4000281c\0");
 
-//	Tables for greenhouse: 
-	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4;40010C10=100"; // GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
-	crontab[1] = "0 1 5,7-19,21 * * * 40010C14 V4"; // GPIOB->BRR = 4
-	crontab[2] = "1 1 5,7-19,21 * * * 40010C10 V10";// GPIOB->BSRR = 0x10
-	crontab[3] = "1 2 5,7-19,21 * * * 40010C14 V10,40010C14=100";// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
-	crontab[4] = "0 30 10-16 * * * 40010C10 V4;40010C10=100";	// GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
-	crontab[5] = "0 31 10-16 * * * 40010C14 V4";	// GPIOB->BRR = 4
-	crontab[6] = "1 31 10-16 * * * 40010C10 V10";	// GPIOB->BSRR = 0x10
-	crontab[7] = "1 32 10-16 * * * 40010C14 V10,40010C14=100";	// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
-	crontab[8] = "*/15 * * * * * 40003000 VAAAA";	// IWDG->KR = 0xAAAA
-	crontab[9] = "5 * * * * * 42248100=1"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
+//	Tables for HPS_Growbox: 
+	crontab[0] = "*/15 * * * * * 40003000 VAAAA";	// IWDG->KR = 0xAAAA
 
 //	Test and tuning example
 //	crontab[9] = "*/5 * * * * * 40010810=8000";		// GPIOA->BSRR=1<<15
@@ -74,10 +56,12 @@ int main()
 
 	RCC->CSR |= RCC_CSR_LSION;
 	while(!(RCC->CSR & RCC_CSR_LSIRDY));
-	IWDG->KR = 0xCCCC;
-	IWDG->KR = 0x5555;
-	IWDG->PR = 0b111;
-	//DBGMCU->CR |= DBGMCU_IWDG_STOP;
+
+// IWDG config
+	//IWDG->KR = 0xCCCC;
+	//IWDG->KR = 0x5555;
+	//IWDG->PR = 0b111;
+	////DBGMCU->CR |= DBGMCU_IWDG_STOP; // For debug watchdog
 
 RCC->APB2ENR |= RCC_APB2Periph_AFIO;
 	AFIO->MAPR |= 0b010<<24; // JTAG off SWD enable
@@ -86,9 +70,6 @@ RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 	GPIOB->CRL &= ~((0b1111 << 2*4) | (0b1111 << 4*4) | (0b1111 << 5*4)); //GPIOB 2,4 - output for relay control
 	GPIOB->CRL |= (0b0001 << 2*4) | (0b0001 << 4*4) | (0b0001 << 5*4); //GPIOB 2,4 - output for relay control
 	GPIOB->ODR = 0; // For reset pullup of GPIOB 4 pin
-
-	GPIOB->CRH &= ~((0b1111 << 0*4));//GPIOB 8 - on/off for 5->12 Volt step-up
-	GPIOB->CRH |= (0b0001 << 0*4);//GPIOB 8 - on/off for 5->12 Volt step-up
 
 // Errors and reset flags detects	
 	if (RCC->CSR & (RCC_CSR_PINRSTF))
@@ -112,8 +93,8 @@ RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 	
 RCC->APB2ENR |= RCC_APB2Periph_GPIOD;
 	AFIO->MAPR |= AFIO_MAPR_PD01_REMAP;
-	GPIOD->CRL &= ~((0b1111 << 0*4) | (0b1111 << 1*4)); //GPIOD 0,1 - output
-	GPIOD->CRL |= (0b0001 << 0*4) | (0b0001 << 1*4); //GPIOD 0,1 - output
+	GPIO_conf(GPIOD,0,OUT_10MHZ); //	GPIOD->CRL &= ~((0b1111 << 0*4) | (0b1111 << 1*4)); //GPIOD 0,1 - output for LED
+	GPIO_conf(GPIOD,1,OUT_10MHZ); //	GPIOD->CRL |= (0b0001 << 0*4) | (0b0001 << 1*4); //GPIOD 0,1 - output for LED
 
 RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
 
@@ -122,27 +103,26 @@ RCC->APB2ENR |= RCC_APB2Periph_USART1; //Включение тактовой USA
 UART_initialization(9600);
 
 //Software_SPI_init();
-SPI_initialization();
-DMA_init();
-ADC_init();
+//SPI_initialization();
+//DMA_init();
+//ADC_init();
 
 	set_alarm(next_alarm());
 
-//	WRSR(2);
-//	RDSR(spi_buf);
-//	WRSR(0);
-//	spi_buf[0]=RDSR();
-//	READ(0,spi_buf,255);
-//	SECTOR_ER(0);
-//	READ(0,spi_buf,255);
-//	READ(0,spi_buf,255);
-//	READ(4096,spi_buf,255);
-//	PAGE_PROG(0x123456, "Hello world", _strlen("Hello world"));
-//	READ(0x123456,spi_buf,255);
+// Timer config
+	RCC->APB1ENR |= RCC_APB1Periph_TIM4;
+	//Timer_fastPWM_ch1(TIM2);
+	Timer_PWM_CenterAligned_for_BRIDGE_DCDC_channel34(TIM4);
+	GPIO_conf(GPIOB,8,AFIO_PP | OUT_50MHZ);
+	GPIO_conf(GPIOB,9,AFIO_PP | OUT_50MHZ);
 
-//	DR_tx=0x55; // For Software SPI first test
-//	_SPI_rw(); // For Software SPI first test
-//	SPI_rw(0x56); // For Software SPI first test
+	RCC->APB2ENR |= RCC_APB2Periph_TIM1;
+	Timer_PWM_CenterAligned_for_BRIDGE_DCDC_channel34(TIM1);
+	RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
+	GPIO_conf(GPIOA,10,AFIO_PP | OUT_50MHZ);
+	GPIO_conf(GPIOA,11,AFIO_PP | OUT_50MHZ);
+
+
 	while(1){
 		transmit_uart_buffer();
 		recieve_uart_buffer();
@@ -221,15 +201,7 @@ ADC_init();
 		}
 	}
 
-
-/*	RCC->APB1ENR = RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3;
-	TIM2->CR1 = TIM_CR1_CEN;
-	TIM3->CR1 = TIM_CR1_CEN;
-	SETMASK(TIM2->CR2, TIM_CR2_MMS, 0b010);
-	SETMASK(TIM3->SMCR, TIM_SMCR_TS, 0b001);
-	SETMASK(TIM3->SMCR, TIM_SMCR_SMS,0b111);
-
-	RCC->APB2ENR |= RCC_APB2Periph_ADC1;
+/*	RCC->APB2ENR |= RCC_APB2Periph_ADC1;
 	SETMASK(ADC1->SMPR1,ADC_SMPR1_SMP16,0b110);// 111 in SMP16
 	ADC1->SQR3 = 16;
 	ADC1->CR2 = ADC_CR2_TSVREFE;
@@ -254,12 +226,18 @@ ADC_init();
 
 uint32_t clock_frequency_measure()
 {
+	TIM_TypeDef TIM2_temp, TIM3_temp;
+	uint32_t TIM2_clk = RCC->APB1ENR & RCC_APB1Periph_TIM2;
+	uint32_t TIM3_clk = RCC->APB1ENR & RCC_APB1Periph_TIM3;
+	memcpy(&TIM2_temp,TIM2,sizeof(*TIM2));
+	memcpy(&TIM3_temp,TIM3,sizeof(*TIM3));
+
 	RCC->APB1ENR |= RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3;
-	TIM2->CR1 = TIM_CR1_CEN;
-	TIM3->CR1 = TIM_CR1_CEN;
 	SETMASK(TIM2->CR2, TIM_CR2_MMS, 0b010);
 	SETMASK(TIM3->SMCR, TIM_SMCR_TS, 0b001);
 	SETMASK(TIM3->SMCR, TIM_SMCR_SMS,0b111);
+	TIM2->CR1 = TIM_CR1_CEN;
+	TIM3->CR1 = TIM_CR1_CEN;
 
 	RTC->CRL &= ~RTC_CRL_SECF;
 	while (!(RTC->CRL & RTC_CRL_SECF));
@@ -270,8 +248,10 @@ uint32_t clock_frequency_measure()
 	TIM2->CR1 =0;
 	TIM3->CR1= 0;
 	uint32_t frequency = (TIM3->CNT<<16)+TIM2->CNT;
+	memcpy(TIM2,&TIM2_temp,sizeof(*TIM2));
+	memcpy(TIM3,&TIM3_temp,sizeof(*TIM3));
 	RCC->APB1ENR &= ~(RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3);
+	RCC->APB1ENR |= TIM2_clk | TIM3_clk;
 	return frequency;
 }
-	
 

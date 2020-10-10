@@ -1,17 +1,10 @@
 #include "main.h"
 #include "crontab.h"
 
-//	uint8_t sec[60];
-//	uint8_t min[60];
-//	uint8_t hour[24];
-//	uint8_t day[31];
-//	uint8_t month[12];
-//	uint8_t weekday[7];
-//
-//uint8_t *times[6]={sec,min,hour,day,month,weekday};
-
 //char crontab_memory[2*1024];
 int32_t localtime = 3*3600;
+char *crontab[32]; //For more than 32 regular expression records are more 32-bit wide of calls variable needed. Or other algorithm needed (not bit mask), for example array of alarmed numbers
+uint32_t calls; // The bit mask alarmed cron tabs 32 bit wide
 
 void cron_action(uint8_t number)
 {

@@ -12,3 +12,4 @@ char *strnchr(char *str, uint16_t len, int c, uint16_t count);
 uint32_t strntouint(char *str, uint16_t count, uint8_t base);
 int32_t powint(int32_t num, int8_t pow);
 int8_t _strncmp(char *s1, char *s2, uint8_t n);
+void *memcpy(void *dest, const void *src, size_t n);
