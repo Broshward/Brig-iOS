@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 #coding:utf8
 
-packet_size=250 # Count of byte readable from flash at one time
+packet_size=20 # Count of byte readable from flash at one time
 
 import sys,os,time
 

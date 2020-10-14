@@ -9,12 +9,19 @@
 //#include "stdlib.h"
 //#include <string.h>
 
+uint32_t flags;
+uint32_t sys_clock;
+uint32_t temperature;
 uint32_t clock_frequency_measure();
+JOURNALING_DATA jdata;
+uint16_t ADC_average[12];
 
 const uint32_t sys_time = 1533128400; // Birthtime of BrigðiOS. Historical remains :-))
 uint32_t *test_value=(uint32_t*)0x2000080C;
 
 uint32_t recent_time, recent_alarm;
+
+uint32_t clock_frequency_measure();
 
 int main()
 {
@@ -52,17 +59,22 @@ int main()
 //	cron_add_tab("5-60/6 * * * * * 40013804 V40\0");
 //	cron_add_tab("* * * * * * 40013804 4000281c\0");
 
+//	Tables for house roof irrigation:
+	crontab[0] = "1 * * * * * 40010C10=104"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
+	crontab[1] = "6 * * * * * 40010C14=104"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
+	crontab[2] = "*/15 * * * * * 40003000 VAAAA";	// IWDG->KR = 0xAAAA
+	
 //	Tables for greenhouse: 
-	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4;40010C10=100"; // GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
-	crontab[1] = "0 1 5,7-19,21 * * * 40010C14 V4"; // GPIOB->BRR = 4
-	crontab[2] = "1 1 5,7-19,21 * * * 40010C10 V10";// GPIOB->BSRR = 0x10
-	crontab[3] = "1 2 5,7-19,21 * * * 40010C14 V10,40010C14=100";// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
-	crontab[4] = "0 30 10-16 * * * 40010C10 V4;40010C10=100";	// GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
-	crontab[5] = "0 31 10-16 * * * 40010C14 V4";	// GPIOB->BRR = 4
-	crontab[6] = "1 31 10-16 * * * 40010C10 V10";	// GPIOB->BSRR = 0x10
-	crontab[7] = "1 32 10-16 * * * 40010C14 V10,40010C14=100";	// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
-	crontab[8] = "*/15 * * * * * 40003000 VAAAA";	// IWDG->KR = 0xAAAA
-	crontab[9] = "5 * * * * * 42248100=1"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
+//	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4;40010C10=100"; // GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
+//	crontab[1] = "0 1 5,7-19,21 * * * 40010C14 V4"; // GPIOB->BRR = 4
+//	crontab[2] = "1 1 5,7-19,21 * * * 40010C10 V10";// GPIOB->BSRR = 0x10
+//	crontab[3] = "1 2 5,7-19,21 * * * 40010C14 V10,40010C14=100";// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
+//	crontab[4] = "0 30 10-16 * * * 40010C10 V4;40010C10=100";	// GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
+//	crontab[5] = "0 31 10-16 * * * 40010C14 V4";	// GPIOB->BRR = 4
+//	crontab[6] = "1 31 10-16 * * * 40010C10 V10";	// GPIOB->BSRR = 0x10
+//	crontab[7] = "1 32 10-16 * * * 40010C14 V10,40010C14=100";	// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
+//	crontab[8] = "*/15 * * * * * 40003000 VAAAA";	// IWDG->KR = 0xAAAA
+//	crontab[9] = "5 * * * * * 42248100=1"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
 
 //	Test and tuning example
 //	crontab[9] = "*/5 * * * * * 40010810=8000";		// GPIOA->BSRR=1<<15

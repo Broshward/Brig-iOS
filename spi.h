@@ -1,5 +1,5 @@
-uint32_t *NSS; // Bit banding address for NSS pin
-char spi_buf[256];
+extern uint32_t *NSS; // Bit banding address for NSS pin
+extern char spi_buf[256];
 
 void SPI_initialization();
 void USART_as_SPI_initializathion();

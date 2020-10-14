@@ -6,23 +6,24 @@
 #include "stm32f10x.h"
 #include "core_cm3.h"
 
-uint32_t sys_clock;
-uint32_t temperature;
-
-struct JOURNALING_DATA {
+typedef struct  {
 	uint32_t time __attribute__ ((__packed__)); //(( aligned(8) ))
 	uint16_t ADC_channels[12] __attribute__ ((__packed__));
 	uint32_t flags __attribute__ ((__packed__));
 	const char end;
-} jdata; // Data for journaling in external flash
-uint16_t ADC_average[12];
+} JOURNALING_DATA; // Data for journaling in external flash
+
+extern uint32_t sys_clock;
+extern uint32_t temperature;
+extern uint32_t flags;
+extern uint16_t ADC_average[12];
+extern JOURNALING_DATA jdata;
 
 #define TIMEH_of_settime BKP->DR1 // Time of last setting time MSB
 #define TIMEL_of_settime BKP->DR2 // LSB
 #define flash_cur_addr_H BKP->DR3 
 #define flash_cur_addr_L BKP->DR4 
 
-uint32_t flags;
 // Number of bit accorded certainf flag in flags register
 #define HARD_FAULT 0
 #define TIME_CLEAR 1

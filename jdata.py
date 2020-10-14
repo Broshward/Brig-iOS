@@ -17,7 +17,7 @@ ADC_channels=[
 ]
 
 ADC_max=4095
-ADC_min=0
+ADC_min=1
 R_pullup=2e3
 R_NTC=10e3
 B_NTC=3950

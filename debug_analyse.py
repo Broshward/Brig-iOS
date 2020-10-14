@@ -2,9 +2,9 @@
 #coding:utf8
 
 import serial, sys, time
-port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=0.2)
 
 if "-bt05" in sys.argv:
+    port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=0.2)
     port.write("AT+ROLE\r\n");
     ROLE=port.readall()
     if ROLE.strip()=="+ROLE=0":
@@ -25,9 +25,10 @@ if "-bt05" in sys.argv:
                 print "Address of connecting device must be hex!"
                 exit(-3)
             port.write("AT+BAND%s\r\n" %(bt_addr));
-            port.write("AT+BAND\r\n");
+           # port.write("AT+BAND\r\n");
             time.sleep(1)
             CONN=port.readall()
+            print CONN
             if "Connected" not in CONN:
                 print "Error connection device"
                 exit(-2)
@@ -36,7 +37,7 @@ if "-bt05" in sys.argv:
             port.write("AT+INQ\r\n");time.sleep(1);
             SCAN=port.readall()
             print SCAN
-            exit(1)
+            exit(0)
 
 from interact import *
 interact=interact()
@@ -49,8 +50,9 @@ else:
         
 # Example commands: ./debug_analyse.py  Rw:2000080c
 if len(sys.argv)>1:
-    cmd = interact.cmd_gen(sys.argv[1])
-    interact.transmit_cmd(cmd)
+    print interact.interact(sys.argv[1])
+    #cmd = interact.cmd_gen(sys.argv[1])
+    #interact.transmit_cmd(cmd)
 
 if not interact.R: # Command without read
     exit(0)
