@@ -2,7 +2,7 @@
 #coding:utf8
 
 import serial, sys, time
-port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=0.2)
+port = serial.Serial('/dev/ttyAML3', baudrate=9600, timeout=0.2)
 
 if "-bt05" in sys.argv:
     port.write("AT+ROLE\r\n");
@@ -31,6 +31,7 @@ if "-bt05" in sys.argv:
             if "Connected" not in CONN:
                 print "Error connection device"
                 exit(-2)
+            exit(2)
         else:
             print "Scanning devices: ...."
             port.write("AT+INQ\r\n");time.sleep(1);
@@ -41,6 +42,9 @@ if "-bt05" in sys.argv:
 from interact import *
 interact=interact()
 
+if "--force-remove-echo" in sys.argv:
+    interact.FORCE_REMOVE_ECHO=1;
+    sys.argv.remove("--force-remove-echo")
 if "-g" in sys.argv:
     interact.debug=1;
     sys.argv.remove("-g")
