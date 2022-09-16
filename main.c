@@ -15,7 +15,7 @@ uint32_t temperature;
 JOURNALING_DATA jdata;
 uint16_t ADC_average[12];
 
-const uint32_t sys_time = 1533128400; // Birthtime of BrigðiOS. Historical remains :-))
+const uint32_t sys_time = 1533128400; // Birthtime of BrygðiOS. Historical remains :-))
 uint32_t *test_value=(uint32_t*)0x2000080C;
 
 uint32_t recent_time, recent_alarm;
@@ -24,6 +24,11 @@ uint32_t clock_frequency_measure();
 
 int main()
 {
+	//RCC->CFGR |= 0b100<<18; //PLLMUL value
+	//RCC->CR |= RCC_CR_PLLON;
+	//while(!(RCC->CR & RCC_CR_PLLRDY));
+	//RCC->CFGR |= 0b10; //PLL as system clock select
+
     RCC->APB1ENR |= RCC_APB1Periph_BKP | RCC_APB1Periph_PWR;
 	PWR->CR |= PWR_CR_DBP; //Unblock RTC & BKP register for write access
 	RCC->BDCR |= RCC_BDCR_RTCSEL_LSE | RCC_BDCR_RTCEN | RCC_BDCR_LSEON; //
@@ -96,32 +101,82 @@ RCC->APB2ENR |= RCC_APB2Periph_GPIOD;
 	GPIO_conf(GPIOD,0,OUT_10MHZ); //	GPIOD->CRL &= ~((0b1111 << 0*4) | (0b1111 << 1*4)); //GPIOD 0,1 - output for LED
 	GPIO_conf(GPIOD,1,OUT_10MHZ); //	GPIOD->CRL |= (0b0001 << 0*4) | (0b0001 << 1*4); //GPIOD 0,1 - output for LED
 
-RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
+	RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
 
-sys_clock=clock_frequency_measure();
-RCC->APB2ENR |= RCC_APB2Periph_USART1; //Включение тактовой USART 
-UART_initialization(9600);
+	sys_clock=clock_frequency_measure();
+	RCC->APB2ENR |= RCC_APB2Periph_USART1; //Включение тактовой USART 
+	UART_initialization(9600);
+
+	set_alarm(next_alarm());
 
 //Software_SPI_init();
 //SPI_initialization();
 //DMA_init();
 //ADC_init();
 
-	set_alarm(next_alarm());
+// Timers config
+//	RCC->APB1ENR |= RCC_APB1Periph_TIM4;
+//	//Timer_fastPWM_ch1(TIM2);
+//	Timer_PWM_CenterAligned_for_BRIDGE_DCDC_channel34(TIM4);
+//	GPIO_conf(GPIOB,8,AFIO_PP | OUT_50MHZ);
+//	GPIO_conf(GPIOB,9,AFIO_PP | OUT_50MHZ);
 
-// Timer config
-	RCC->APB1ENR |= RCC_APB1Periph_TIM4;
-	//Timer_fastPWM_ch1(TIM2);
-	Timer_PWM_CenterAligned_for_BRIDGE_DCDC_channel34(TIM4);
-	GPIO_conf(GPIOB,8,AFIO_PP | OUT_50MHZ);
-	GPIO_conf(GPIOB,9,AFIO_PP | OUT_50MHZ);
+	RCC->APB2ENR |= RCC_APB2Periph_TIM15;
+	TIM15->CR1 = TIM_CR1_ARPE | TIM_CR1_CEN;
+	TIM15->CR2=1;
+	SETMASK(TIM15->CCMR1, TIM_CCMR1_OC1M, 0b110);
+	TIM15->CCMR1 |= TIM_CCMR1_OC1PE;
+	TIM15->PSC = sys_clock/10000;
+	TIM15->ARR=10000;
+	TIM15->CCR1=10;
+	TIM15->DIER=0b11<<8;
 
-	RCC->APB2ENR |= RCC_APB2Periph_TIM1;
+//	union ON_OFF {
+//		uint16_t on; 
+//		uint16_t off;
+//	} on_off_outs;
+//	on_off_outs.on =12544;
+//	on_off_outs.off=0;
+	uint32_t on_off_outs = (TIM_CCER_CC4E | TIM_CCER_CC4P | TIM_CCER_CC3E);
+	//uint32_t on_off_outs = 0 | ((TIM_CCER_CC4E | TIM_CCER_CC4P | TIM_CCER_CC3E)<<16);
+	RCC->AHBENR |= RCC_AHBENR_DMA1EN;
+	DMA1_Channel5->CNDTR = 2;
+	DMA1_Channel5->CPAR = (uint32_t)&TIM1->CCER;
+	DMA1_Channel5->CMAR = (uint32_t)&on_off_outs;
+	#define MSIZE 0b01<<10	// For 16 bit transaction
+	#define PSIZE 0b01<<8	// For 16 bit transaction
+	#define MINC 1<<7		//Memory increment
+	#define CIRC 1<<5		//Circular mode
+	#define DIR 1<<4
+	DMA1_Channel5->CCR = MSIZE | PSIZE | DIR | MINC | CIRC | 1; // Last 1 for ENable
+
+	RCC->APB2ENR|= RCC_APB2Periph_TIM1;
+#define rezonance_freq (int)(3.3e-6*(1<<24)) // us
+	TIM1->ARR = rezonance_freq*sys_clock>>25; // 25 = 24 + 1 for /2
+	TIM1->CCR3 = TIM1->ARR/3;
+	TIM1->CCR4 = TIM1->ARR - TIM1->CCR3;
+//	TIM1->RCR = 255;
 	Timer_PWM_CenterAligned_for_BRIDGE_DCDC_channel34(TIM1);
 	RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
 	GPIO_conf(GPIOA,10,AFIO_PP | OUT_50MHZ);
 	GPIO_conf(GPIOA,11,AFIO_PP | OUT_50MHZ);
+//	TIM1->ARR = 100;
+//	TIM1->CCR3 = 10;
+//	TIM1->CCR4 = 90;
 
+//while(1)
+//{
+//		TIM1->ARR = 20;
+//		TIM1->CCR3 = 7;
+//		TIM1->CCR4 = 13;
+//		cbi(TIM1->SR,0); while(bit_is_clear(TIM1->SR,0));
+//			TIM1->ARR = 40;
+//			TIM1->CCR3 = 10;
+//			TIM1->CCR4 = 30;
+//		for (int i=0;i<100;i++){
+//			cbi(TIM1->SR,0); while(bit_is_clear(TIM1->SR,0));
+//		}
+//}
 
 	while(1){
 		transmit_uart_buffer();

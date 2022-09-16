@@ -105,7 +105,6 @@ class interact:
                 if self.data_width==0: # String data
                     data=pack
                 else:
-                    res=0
                     for i in [pack[i:i+self.data_width] for i in range(0,len(pack),self.data_width)]:
                         data += str(sum([ord(i[j])<<8*j for j in range(self.data_width)]))+' '
                 return data

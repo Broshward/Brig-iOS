@@ -15,16 +15,16 @@ ch2=period-pwm
 
 from interact import *
 interact=interact()
-interact.debug=1
+interact.debug=0
 
 #print interact.interact("") 
 cmd="CR%x=%x,%x=%x,%x=%x" %(TIM+ARR,arr,TIM+CCR3,ch1,TIM+CCR4,ch2)
-print cmd
+#print cmd
 #sleep(1)
 interact.interact(cmd)
-cmd="CR*%x,*%x,*%x" %(TIM+ARR,TIM+CCR3,TIM+CCR4)
-print cmd
-print interact.interact(cmd)
+#cmd="CR*%x,*%x,*%x" %(TIM+ARR,TIM+CCR3,TIM+CCR4)
+#print cmd
+#print interact.interact(cmd)
 #print interact.interact("RWh:%x=%x" %(TIM+ARR,arr)) # Timer4 ARR register (Period of timer/counter)
 #print interact.interact("RWh:%x=%x" %(TIM+CCR3,ch1)) # Timer4 CCR3 register
 #print interact.interact("RWh:%x=%x" %(TIM+CCR4,ch2)) # Timer4 CCR4 register
