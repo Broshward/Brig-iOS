@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+
+prefix="/home/leha/work/Electronics/greenhouse/Brig-iOS"
+#fertigation_time=12 #minutes
+
+$prefix/get_time.py
+$prefix/pumps.py right on
+sleep $((60*12))
+$prefix/pumps.py right off
+
+sleep 1
+
+$prefix/pumps.py left on
+sleep $((60*13))
+$prefix/pumps.py left off
+
