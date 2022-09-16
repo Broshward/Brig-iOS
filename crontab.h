@@ -21,8 +21,8 @@ typedef struct {
 	uint8_t century;
 } TIME;
 
-char *crontab[32]; //For more than 32 regular expression records are more 32-bit wide of calls variable needed. Or other algorithm needed (not bit mask), for example array of alarmed numbers
-uint32_t calls; // The bit mask alarmed cron tabs 32 bit wide
+extern char *crontab[32]; //For more than 32 regular expression records are more 32-bit wide of calls variable needed. Or other algorithm needed (not bit mask), for example array of alarmed numbers
+extern uint32_t calls; // The bit mask alarmed cron tabs 32 bit wide
 
 void ShowLed(int8_t T);
 uint8_t dec_num_parse(char **str);

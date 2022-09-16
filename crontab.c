@@ -12,6 +12,8 @@
 
 //char crontab_memory[2*1024];
 int32_t localtime = 3*3600;
+uint32_t calls; // The bit mask alarmed cron tabs 32 bit wide
+char *crontab[32]; //For more than 32 regular expression records are more 32-bit wide of calls variable needed. Or other algorithm needed (not bit mask), for example array of alarmed numbers
 
 void cron_action(uint8_t number)
 {

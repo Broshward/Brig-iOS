@@ -245,7 +245,7 @@ void cmd_perform(char *str, uint16_t count) // last byte of string is END.
 	// I nteger
 	// S hort
 	// B yte
-	#define WRITE	(cmd & (1<<7))
+	#define WRITE	(cmd & (1<<7)) 
 	#define READ	(cmd & (1<<6))
 	#define INC		(cmd & (1<<5))
 	#define PAUSE	(cmd & (1<<4))
@@ -262,7 +262,7 @@ void cmd_perform(char *str, uint16_t count) // last byte of string is END.
 			data_size=1;
 		}
 		else if (!WRITE){
-			if (READ) { // write command
+			if (READ) { // read command
 				if (count) {
 					count=*(uint8_t*)(str);
 					str++;
@@ -311,7 +311,7 @@ void cmd_perform(char *str, uint16_t count) // last byte of string is END.
 				}
 				transmit_queue_index+=data_size;
 			}
-			if (INC) // if increment
+			if (INC || STRING) // if increment
 				addr+=data_size;
 			count-=data_size;
 		}

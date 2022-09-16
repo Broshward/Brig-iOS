@@ -15,6 +15,12 @@ const uint32_t sys_time = 1533128400; // Birthtime of BrigðiOS. Historical rema
 uint32_t *test_value=(uint32_t*)0x2000080C;
 
 uint32_t recent_time, recent_alarm;
+uint32_t sys_clock;
+uint32_t temperature;
+uint32_t flags;
+uint16_t ADC_average[12];
+JOURNALING_DATA jdata;
+
 
 int main()
 {
