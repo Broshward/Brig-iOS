@@ -1,0 +1,8 @@
+1. Not write strings Wis command
+2. Not write count of bytes, words if count >1
+3. Empty string in crontab feezing and reset microcontroller
+
+4. UART timeout add
+5. WRIPSISB checksum add
+6. 'AT' masking
+
