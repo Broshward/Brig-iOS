@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 #coding:utf8
 
-device="/dev/ttyAML3"
+device="/dev/ttyUSB0"
 
 cmds={  "R1":0b01000001,        # Example: R1:20000010   R1:20000010*16
         "R2":0b01000010,        # Example: 
@@ -77,7 +77,7 @@ class interact:
             self.data_width = cmd & 0b111
             if '*' in addr:
                 addr,count = addr.split('*',1)
-                count=int(count)
+                count=int(count,16)
             else:
                 count = None
             addr=int(addr,16)
@@ -144,7 +144,8 @@ class interact:
                 else:
                     res=0
                     for i in [pack[i:i+self.data_width] for i in range(0,len(pack),self.data_width)]:
-                        data += str(sum([ord(i[j])<<8*j for j in range(self.data_width)]))+' '
+                        data += '%x' %(sum([ord(i[j])<<8*j for j in range(self.data_width)]))+','
+                    data=data[:-1]
                 return data
 
     def interact(self,cmd):
