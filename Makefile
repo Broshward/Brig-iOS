@@ -70,8 +70,6 @@ tags: clean_tags
 	$(CC) -M $(CFLAGS) $(FILES) | sed -e 's/[\\ ]/\n/g' | \
 		sed -e '/^$$/d' -e '/\.o:[ \t]*$$/d' | \
 		ctags -L - --c++-kinds=+p --fields=+iaS --extras=+q 
-cparser:
-	$(CC) -nostdinc -E -D'__attribute__(x)=' -Ipycparser/utils/fake_libc_include $(CFLAGS) $(FILES) > $(PROGRAM)_CPARSER.c 
 	
 #-----------------------------------------------------------------------------------------------------
 libs: clean_libs
