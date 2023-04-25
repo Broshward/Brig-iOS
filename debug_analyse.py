@@ -2,7 +2,7 @@
 #coding:utf8
 
 import serial, sys, time
-port = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=0.2)
+port = serial.Serial('/dev/ttyUSB0', baudrate=9600, timeout=0.2)
 
 if "-bt05" in sys.argv:
     port.write("AT+ROLE\r\n");

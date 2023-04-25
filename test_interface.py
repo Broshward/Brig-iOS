@@ -3,9 +3,6 @@
 test_addr=0x20000000+530 # ~200 byte free in RAM
 
 import sys,os,time
-CINTERPRETER_PATH='/home/leha/STM32/Cinterpreter/'
-sys.path.append(CINTERPRETER_PATH)
-from cinterpreter import *
 from interact import *
 interact=interact()
 
@@ -88,3 +85,10 @@ read_and_write(test_addr,'','b','a5,c3,c3,f0,f0,f0,81,81,81,81,aa,aa,aa,aa,55,55
 print '%d. Read string without increment memory. (For example read string from port)'
 read_and_write(test_addr,'','s','Hello world!')
 
+#-------------------------------------------------------------------------
+print '\n   Cinterpreter tests:\n'
+CINTERPRETER_PATH='/home/leha/STM32/Cinterpreter/'
+sys.path.append(CINTERPRETER_PATH)
+from cinterpreter import *
+
+parse('int flags;printf(flags);')
