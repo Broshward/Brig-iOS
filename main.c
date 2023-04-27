@@ -59,16 +59,13 @@ int main()
 //	cron_add_tab("* * * * * * 40013804 4000281c\0");
 
 //	Tables for greenhouse: 
-	crontab[0] = "0 0 5,7-19,21 * * * 40010C10 V4;40010C10=100"; // GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
-	crontab[1] = "0 1 5,7-19,21 * * * 40010C14 V4"; // GPIOB->BRR = 4
-	crontab[2] = "1 1 5,7-19,21 * * * 40010C10 V10";// GPIOB->BSRR = 0x10
-	crontab[3] = "1 2 5,7-19,21 * * * 40010C14 V10,40010C14=100";// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
-	crontab[4] = "0 30 10-16 * * * 40010C10 V4;40010C10=100";	// GPIOB->BSRR = 4; GPIOB->BSRR=1<<8
-	crontab[5] = "0 31 10-16 * * * 40010C14 V4";	// GPIOB->BRR = 4
-	crontab[6] = "1 31 10-16 * * * 40010C10 V10";	// GPIOB->BSRR = 0x10
-	crontab[7] = "1 32 10-16 * * * 40010C14 V10,40010C14=100";	// GPIOB->BRR = 0x10; GPIOB->BRR=1<<8
-	crontab[8] = "*/15 * * * * * 40003000 VAAAA";	// IWDG->KR = 0xAAAA
-	crontab[9] = "5 * * * * * 42248100=1"; // *bit_band_of(&ADC1->CR2,0)=1; ADON bit set for start conversions
+	crontab[0] = "*/15 * * * * * 40003000=AAAA"; 
+	crontab[1] = "0 0 8-20/5 * * * 40010C10=100"; 
+	crontab[2] = "1 0 8-20/5 * * * 40010C10=10";
+	crontab[3] = "0 13 8-20/5 * * * 40010C14=10";
+	crontab[4] = "1 13 8-20/5 * * * 40010C10=4";
+	crontab[5] = "0 26 8-20/5 * * * 40010C14=4";	
+	crontab[6] = "1 26 8-20/5 * * * 40010C14=100";
 
 //	Test and tuning example
 //	crontab[9] = "*/5 * * * * * 40010810=8000";		// GPIOA->BSRR=1<<15

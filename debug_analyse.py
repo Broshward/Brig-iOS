@@ -2,8 +2,9 @@
 #coding:utf8
 
 import serial, sys, time
-port = serial.Serial('/dev/ttyAML3', baudrate=9600, timeout=0.2)
+port = serial.Serial('/dev/ttyACM0', baudrate=9600, timeout=0.2)
 
+#import pdb;pdb.set_trace()
 if "-bt05" in sys.argv:
     port.write("AT+ROLE\r\n");
     ROLE=port.readall()

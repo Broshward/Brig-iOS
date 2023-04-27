@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 #coding:utf8
 
-device="/dev/ttyAML3"
+device="/dev/ttyACM0"
 
 cmds={  "R1":0b01000001,        # Example: R1:20000010   R1:20000010*16
         "R2":0b01000010,        # Example: 
